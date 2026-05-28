@@ -1,7 +1,7 @@
 import httpx
 
-from hubeau_py.client import SimpleHydrometrieClient
-from hubeau_py.models.hydrometrie import ObsElab, ObservationTr, Site, Station
+from hubeau_data.client import SimpleHydrometrieClient
+from hubeau_data.models.hydrometrie import ObsElab, ObservationTr, Site, Station
 
 
 def test_station_model_validation() -> None:

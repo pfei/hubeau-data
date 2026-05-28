@@ -2,7 +2,7 @@ from typing import Any, List, Optional
 
 import httpx
 
-from hubeau_py.models.qualite_rivieres import AnalysePc, StationPc
+from hubeau_data.models.qualite_rivieres import AnalysePc, StationPc
 
 
 class QualiteRivieresAPI:

@@ -1,8 +1,8 @@
 from typing import List
 
-from hubeau_py.api.hydrometrie import HydrometrieAPI
-from hubeau_py.api.qualite_rivieres import QualiteRivieresAPI
-from hubeau_py.models.hydrometrie import ObsElab, ObservationTr, Site, Station
+from hubeau_data.api.hydrometrie import HydrometrieAPI
+from hubeau_data.api.qualite_rivieres import QualiteRivieresAPI
+from hubeau_data.models.hydrometrie import ObsElab, ObservationTr, Site, Station
 
 
 class HubeauClient:

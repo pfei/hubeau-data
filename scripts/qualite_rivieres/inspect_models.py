@@ -6,7 +6,7 @@ from typing import Any, Dict, Type
 import httpx
 from pydantic import BaseModel
 
-from hubeau_py.models.qualite_rivieres import (
+from hubeau_data.models.qualite_rivieres import (
     AnalysePc,
     ConditionEnvironnementalePc,
     HubeauEnvelope,

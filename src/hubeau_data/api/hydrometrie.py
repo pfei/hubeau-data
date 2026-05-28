@@ -2,7 +2,7 @@ from typing import Any, List
 
 import httpx
 
-from hubeau_py.models.hydrometrie import ObsElab, ObservationTr, Site, Station
+from hubeau_data.models.hydrometrie import ObsElab, ObservationTr, Site, Station
 
 
 class HydrometrieAPI:

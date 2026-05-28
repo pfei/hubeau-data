@@ -54,7 +54,7 @@ def check_undocumented_fields(
 
 
 if __name__ == "__main__":
-    from hubeau_py.models.qualite_rivieres import (
+    from hubeau_data.models.qualite_rivieres import (
         AnalysePc,
         ConditionEnvironnementalePc,
         OperationPc,

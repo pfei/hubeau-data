@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Optional
 
 import pandas as pd
 
-from hubeau_py.models.qualite_rivieres import StationPc
+from hubeau_data.models.qualite_rivieres import StationPc
 from scripts.qualite_rivieres.api_utils import fetch_analyses
 
 # --- Configuration ---
@@ -165,7 +165,8 @@ def process_station(
             # Save intermediate results periodically
             if analysis_count % save_interval == 0:
                 print(
-                    f"Processed {analysis_count} analyses for station {station_id}, saving intermediate results..."
+                    f"Processed {analysis_count} analyses for station {station_id}, "
+                    " saving intermediate results..."
                 )
                 intermediate_candidates = []
                 for param, dates in param_dates.items():
@@ -370,7 +371,8 @@ def main() -> None:
         # Get random station indices
         station_indices = get_random_stations(total_stations)
         print(
-            f"\nRandomly selecting {NUM_STATIONS_TO_ANALYZE} stations out of {total_stations} total stations..."
+            f"\nRandomly selecting {NUM_STATIONS_TO_ANALYZE} stations "
+            f"out of {total_stations} total stations..."
         )
 
         # Fetch only the selected stations
@@ -380,17 +382,20 @@ def main() -> None:
         print("\nSelected stations:")
         for i, station in enumerate(selected_stations, 1):
             print(
-                f"{i}. Station code: {station.code_station} - Name: {station.libelle_station}"
+                f"{i}. Station code: {station.code_station} - "
+                f"Name: {station.libelle_station}"
             )
 
         print(
-            f"\nStarting analysis (limited to {MAX_ANALYSES_PER_STATION} analyses per station)..."
+            f"\nStarting analysis (limited to {MAX_ANALYSES_PER_STATION} "
+            "analyses per station)..."
         )
 
         results: List[Dict[str, Any]] = []
         for station in selected_stations:
             print(
-                f"\nProcessing station {station.code_station} ({station.libelle_station})..."
+                f"\nProcessing station {station.code_station} "
+                f"({station.libelle_station})..."
             )
             result = process_station(station, debug_limit=MAX_ANALYSES_PER_STATION)
             results.append(result)

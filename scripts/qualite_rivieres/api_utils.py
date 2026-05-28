@@ -3,7 +3,7 @@ from typing import Iterator, List, Optional
 
 import httpx
 
-from hubeau_py.models.qualite_rivieres import AnalysePc, StationPc
+from hubeau_data.models.qualite_rivieres import AnalysePc, StationPc
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +27,9 @@ def fetch_analyses(
 ) -> Iterator[AnalysePc]:
     """Fetch analyses for a station one at a time using an iterator.
 
-    This function yields individual AnalysePc objects instead of accumulating them in memory.
+    This function yields individual AnalysePc objects instead of
+    accumulating them in memory.
+
     Each analysis is yielded as soon as it's fetched and processed.
 
     Args:
@@ -42,7 +44,8 @@ def fetch_analyses(
     while True:
         if debug_limit is not None and total_fetched >= debug_limit:
             print(
-                f"Debug limit of {debug_limit} analyses reached for station {station_code}"
+                f"Debug limit of {debug_limit} analyses reached "
+                f"for station {station_code}"
             )
             break
 

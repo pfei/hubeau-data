@@ -2,7 +2,7 @@ from typing import Generic, List, Optional, TypeVar, Union
 
 from pydantic import BaseModel
 
-from hubeau_py.models.geojson import Geometry
+from hubeau_data.models.geojson import Geometry
 
 T = TypeVar("T")
 

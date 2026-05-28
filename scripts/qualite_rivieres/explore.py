@@ -73,7 +73,8 @@ def main() -> None:
             try:
                 analyses = list(fetch_analyses(station.code_station))
                 print(
-                    f"\nStation: {station.libelle_station} (code: {station.code_station})"
+                    f"\nStation: {station.libelle_station} "
+                    f"(code: {station.code_station})"
                 )
                 print(f"Number of analyses: {len(analyses)}")
                 if analyses:
