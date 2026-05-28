@@ -1,198 +1,132 @@
 > ⚠️ **Pre-Alpha Notice**
 >
-> This project is in a **very early, pre-alpha state**.  
+> This project is in a **very early, pre-alpha state**.\
 > The goal is to become a solid, typed, and reference Python client for the Hubeau APIs.
 > Expect rapid changes, breaking updates, and incomplete coverage.
 > Contributions, feedback, and issue reports are very welcome!
 
-# hubeau-py
+# hubeau-data
 
 Pythonic, typed, and modern client for the Hubeau water data APIs.
 
 ## API Coverage and Status
 
-| API Name              | Status             | Notes                                                                                                                                                                                               |
+| API Name | Status | Notes |
 | --------------------- | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Qualité Rivières**  | ⚠️ Limited Support | Initial implementation with known limitations. API has pagination issues and high error rates (~60%) when querying large datasets. Best used for targeted queries rather than bulk data extraction. |
-| **Hydrologie**        | 🚧 In Progress     | Currently being implemented.                                                                                                                                                                        |
-| **Other Hubeau APIs** | 📅 Planned         | Will be added in future releases.                                                                                                                                                                   |
+| **Qualité Rivières** | ⚠️ Limited Support | Initial implementation with known limitations. API has pagination issues and high error rates (~60%) when querying large datasets. Best used for targeted queries rather than bulk data extraction. |
+| **Hydrométrie** | ✅ Supported | Full access to sites, stations, and real-time or elaborated observations. Implemented via unified and simple client layers. |
+| **Other Hubeau APIs** | 📅 Planned | Will be added in future releases. |
 
-> **Note on Qualité Rivières API:**  
-> Our exploration revealed significant rate limiting and stability issues when attempting exhaustive data extraction. The API works well for targeted queries but may not be suitable for comprehensive data analysis across all stations. See the `scripts/qualite_rivieres/` directory for exploration tools and findings.
+> **Note on Qualité Rivières API:** > Our exploration revealed significant rate limiting and stability issues when attempting exhaustive data extraction. The API works well for targeted queries but may not be suitable for comprehensive data analysis across all stations. See the `scripts/qualite_rivieres/` directory for exploration tools and findings.
 
 ## Features
 
 - Typed, Pythonic client for the Hubeau water data APIs
-- Easy querying of water quality and station data
-- Returns results as Pydantic models for type safety
-- Ready for use in data science workflows (e.g., with pandas)
+- Easy querying of water quality, hydrometry observations, and station data
+- Returns results as Pydantic v2 models for strict runtime type safety
+- Ready for use in data science workflows with production-ready `pandas` and `geopandas` DataFrames
 
 ## Development Model
 
 - Modern Python (**3.13+**)
-- Strict typing throughout the codebase
-- [Poetry](https://python-poetry.org/) for dependency and environment management
-- Linting, formatting, and type checking enforced (ruff, black, mypy)
-- Follows the [src-layout](https://realpython.com/python-application-layouts/) for package structure
+- Strict typing throughout the codebase (`mypy --strict`)
+- Enforced linting and formatting via fast Rust-powered tooling (`ruff`)
+- Standardized package architecture adhering to the [src-layout](https://realpython.com/python-application-layouts/)
+- Built using **`hatchling`** as the PEP 517 build backend and **`uv`** for dependency management
 
 ## Quickstart
 
 ```python
-from hubeau_py.client import HubeauClient
+from hubeau_data.client import HubeauClient
+
 client = HubeauClient()
-stations = client.get_stations("Paris") # Example: get stations by name for the Qualité Rivières API
+
+# 1. Qualité Rivières Endpoint
+stations = client.qualite_rivieres.get_stations(libelle_commune="Paris", size=3)
 print(stations)
+
+# 2. Hydrométrie Endpoint
+observations = client.hydrometrie.get_observations_tr(code_station="Y120201001", size=3)
+print(observations)
 ```
 
-## Example Notebook
+## Example Notebooks
 
-A continuously updated example notebook is available in [`examples/demo.ipynb`](examples/demo.ipynb).
+Continuously updated example notebooks and dashboards are available under the `examples/` directory.
 
-- This notebook demonstrates the main features of `hubeau-py` and provides practical usage examples.
-- You can run it locally using Jupyter Notebook or JupyterLab:
+You can run them locally using Jupyter Lab or Notebook instantly through `uv`:
 
-```
-$ poetry run jupyter notebook examples/demo.ipynb
-```
-
-or, after activating the virtual environment:
-
-```
-$ jupyter notebook examples/demo.ipynb
+```zsh
+uv run jupyter lab
 ```
 
-- The notebook should be expanded as new functionalities are added to the package.
+## Installation & Development
 
-For more about Jupyter, see the [official documentation](https://jupyter.org/documentation).
+This project leverages [uv](https://github.com/astral-sh/uv) for fast, modern dependency and workspace orchestration.
 
-## Development
+### 1. Project Setup
 
-- Install dependencies:
+Clone the repository and synchronize the environment. `uv` will automatically
+provision Python 3.13, create a virtual environment, and install the package along with its development groups:
 
-```
-$ poetry install
-```
-
-- Run tests:
-
-```
-$ poetry run pytest
+```zsh
+git clone https://github.com/your-username/hubeau-data.git
+cd hubeau-data
+uv sync
 ```
 
-- Lint code:
+### 2. Quality Assurance Commands
 
-```
-$ poetry run ruff check src/
-```
+Run the full local verification suite through `uv run`:
 
-- Format code:
-
-```
-$ poetry run black src/
-```
-
-- Type check:
-
-```
-$ poetry run mypy src/
-```
+- **Linting & Formatting:**
+  ```zsh
+  uv run ruff check .
+  ```
+- **Type Checking (Strict Mode):**
+  ```zsh
+  uv run mypy .
+  ```
+- **Run Fast Mocked Test Suite:**
+  ```zsh
+  uv run pytest -m "not live"
+  ```
+- **Run Real Network Integration Tests:**
+  ```zsh
+  uv run pytest -m "live" -s
+  ```
 
 ## How Imports Work
 
-This project uses the [src-layout](https://realpython.com/python-application-layouts/) and [Poetry](https://python-poetry.org/) for dependency and environment management.
+This project uses the modern Python **src-layout** combined with a PEP 517 build system powered by `hatchling`.
 
-When you run:
+When you run `uv sync`, the project is automatically installed in **editable mode** (the standard PEP 660 equivalent of `pip install -e .`) inside the `.venv` directory. An optimized import hook proxy is placed in the virtual environment's `site-packages`, routing any package calls straight to your local `src/hubeau_data` directory.
 
-```
-$ poetry install
-```
-
-Poetry installs your package in **editable mode** (like `pip install -e .`).  
-This means you can import your code from anywhere in the project, including notebooks and tests, using:
+This allows you to safely use absolute imports across any test, script, or notebook without manual path manipulations:
 
 ```python
-from hubeau_py.client import HubeauClient
+from hubeau_data.client import HubeauClient
 ```
 
-**You must always run code (scripts, notebooks, tests) in the Poetry environment** so that imports work correctly:
+Always prefix your execution commands with `uv run` (e.g., `uv run pytest`, `uv run demo.py`) to ensure Python looks up the package matching your isolated workspace environment. Alternatively, you can activate the virtual environment manually within your shell:
 
-### Recommended: Poetry Commands
-
-- For notebooks:
-  - Launch with `poetry run jupyter notebook` or select the `.venv` interpreter in VS Code.
-- For tests:
-  - Run with `poetry run pytest`
-- For scripts:
-  - Run with `poetry run python your_script.py`
-- Or enter a Poetry-managed shell: `poetry shell`
-  and now run: python, pytest, etc.
-
-### Alternative: Activate the Virtual Environment Manually
-
-If you prefer, you can activate the `.venv` directly (for example, in a terminal or before launching Jupyter/VS Code):
-
+```zsh
+source .venv/bin/activate
 ```
-$ source .venv/bin/activate
-```
-
-Once activated, any Python or pip command will use the project environment.
-
-> **Note:**  
-> Whether you use `poetry run ...`, `poetry shell`, or activate `.venv` directly, you’re using the same environment managed by Poetry.  
-> This ensures all imports (like `from hubeau_py.client import HubeauClient`) work as expected in scripts, tests, and notebooks.
-
-> **Windows users:**  
-> It is recommended to use [WSL2](https://learn.microsoft.com/en-us/windows/wsl/) for a smoother Unix-like experience.  
-> If you prefer native Windows, you will need to adapt the commands and environment activation steps to your setup.
-
-For more, see the [Poetry documentation](https://python-poetry.org/docs/basic-usage/).
-
-## VS Code Users
-
-A `.vscode/settings.json` is included to provide a consistent development environment for VS Code users:
-
-- Automatically uses the Poetry-managed virtual environment
-- Formats code on save with Black
-- Organizes imports on save
-- Runs mypy type checking with the correct interpreter
-
-Feel free to adjust these settings for your personal workflow if needed.
-
-> **Customizing VS Code settings**
->
-> The `.vscode/settings.json` file in this repository provides recommended project settings for all contributors.
->
-> If you want to adjust these settings for your personal workflow **without affecting version control**, you can:
->
-> - **Override settings in your personal (user) settings:**  
->   Open the Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`), type `Preferences: Open User Settings (JSON)`, and add your overrides there.  
->   User settings take precedence over workspace settings for most editor preferences.
->
-> - **Avoid committing unintended changes:**  
->   If you do change `.vscode/settings.json`, double-check with `git status` before committing, and use `git restore .vscode/settings.json` to undo accidental edits.
->
-> For more details, see the [VS Code documentation on settings](https://code.visualstudio.com/docs/configure/settings).
 
 ## Inspect Scripts
 
-Scripts for exploring and inspecting the Hubeau APIs are organized by API in the `scripts/` directory. For example:
+Scripts for exploring and inspecting the Hubeau APIs are organized by endpoint under the `scripts/` directory. For example:
 
-- **qualite_rivieres/**: Scripts for the "Qualité Rivières" API.
+- **qualite_rivieres/**: Tools for the "Qualité Rivières" API.
   - `explore.py`: Interactive exploration of the API.
-  - `inspect_*.py`: Inspection scripts for specific endpoints and models.
-  - `check_undocumented_fields.py`: Checks for undocumented fields in API responses.
+  - `analyze_time_series.py`: Paginated fetching and analysis across stations with built-in API error fallback.
 
 **Usage:**
 
-```python
-$ poetry run python scripts/qualite_rivieres/inspect_station_pc.py
-$ poetry run python scripts/qualite_rivieres/inspect_operation_pc.py
+```zsh
+uv run python scripts/qualite_rivieres/explore.py
 ```
-
-You can adjust the `n` parameter in each script (edit the script and change `n=10`, for example) to control how many records are fetched and inspected.
-
-> **Note:**  
-> As support for more Hubeau APIs is added, new subdirectories will be created under `scripts/` for each API.
 
 ## License
 

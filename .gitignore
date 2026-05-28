@@ -54,3 +54,5 @@ Thumbs.db
 
 # data generated during exploration
 data/
+.virtual_documents/
+.virtual_documents/
