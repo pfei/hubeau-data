@@ -29,8 +29,9 @@ dev = [
     "pytest-httpx>=0.36.2",
 ]
 
-[tool.poetry]
-packages = [{ include = "hubeau_data", from = "src" }]
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [tool.ruff]
 line-length = 88
@@ -39,13 +40,13 @@ extend-include = ["*.ipynb"]
 [tool.ruff.lint]
 select = ["E", "F", "I"]
 
+[tool.ruff.lint.per-file-ignores]
+"*.ipynb" = ["E501"]
+
 [tool.mypy]
 python_version = "3.13"
 strict = true
 ignore_missing_imports = true
-
-[tool.ruff.lint.per-file-ignores]
-"*.ipynb" = ["E501"]
 
 [tool.pytest.ini_options]
 markers = [

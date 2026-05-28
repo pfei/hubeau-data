@@ -550,7 +550,7 @@ wheels = [
 [[package]]
 name = "hubeau-data"
 version = "0.0.1"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "geopandas" },
     { name = "httpx" },
