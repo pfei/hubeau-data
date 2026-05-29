@@ -36,7 +36,8 @@ def run_demo() -> None:
                 f"  -> Station #{i}: {station.code_station} - {station.libelle_station}"
             )
             print(
-                f"     Location: {station.libelle_commune} ({station.code_commune}) | URI: {station.uri_station}"
+                f"     Location: {station.libelle_commune} ({station.code_commune}) | "
+                f"URI: {station.uri_station}"
             )
 
     except ReadTimeout:
