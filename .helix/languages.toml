@@ -1,1 +1,11 @@
+[language-server.jedi-language-server]
+command = ".venv/bin/jedi-language-server"
+args = []
 
+[language-server.jedi-language-server.config]
+workspace.environmentPath = ".venv"
+jediSettings.autoImportModules = ["httpx", "pydantic", "pandas"]
+
+[[language]]
+name = "python"
+language-servers = ["ruff", "jedi-language-server"]
