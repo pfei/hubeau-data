@@ -1,7 +1,1 @@
-[[language]]
-name = "python"
-language-servers = [ "jedi-language-server" ]
 
-[language-server.jedi-language-server]
-command = "jedi-language-server"
-config = { workspace = { environmentPath = ".venv" } }
