@@ -81,9 +81,10 @@ Exploration scripts by API under `scripts/`:
 
 ## Roadmap
 
-- [ ] Typed `Params` models for all `qualite_rivieres` endpoints (in progress)
-- [ ] Optional dependency groups — `pandas`, `geopandas`, `matplotlib` as extras
-- [ ] `CHANGELOG.md` + `CONTRIBUTING.md`
+- [x] Typed `Params` models for all `hydrometrie` endpoints
+- [x] Typed `Params` models for all `qualite_rivieres` endpoints
+- [x] Optional dependency groups — `pandas`, `geopandas`, `matplotlib` as extras
+- [x] `CHANGELOG.md` + `CONTRIBUTING.md`
 - [ ] Rich examples — notebooks and scripts for hydrometrie + qualite_rivieres
 - [ ] API health check scripts (responsiveness, uptime, error rate)
 - [ ] Full Hub'Eau API coverage (piezometry, drinking water, flow conditions...)
