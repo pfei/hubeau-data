@@ -2,7 +2,16 @@ from typing import List
 
 from hubeau_data.api.hydrometrie import HydrometrieAPI
 from hubeau_data.api.qualite_rivieres import QualiteRivieresAPI
-from hubeau_data.models.hydrometrie import ObsElab, ObservationTr, Site, Station
+from hubeau_data.models.hydrometrie import (
+    ObsElab,
+    ObsElabParams,
+    ObservationTr,
+    ObservationTrParams,
+    Site,
+    SiteParams,
+    Station,
+    StationParams,
+)
 
 
 class HubeauClient:
@@ -22,19 +31,23 @@ class SimpleHydrometrieClient:
     def get_sites_by_department(
         self, code_departement: str, size: int = 10
     ) -> List[Site]:
-        return self.api.get_sites(code_departement=code_departement, size=size)
+        params = SiteParams(code_departement=[code_departement], size=size)
+        return self.api.get_sites(params=params)
 
     def get_stations_by_commune(
         self, code_commune: str, size: int = 10
     ) -> List[Station]:
-        return self.api.get_stations(code_commune_station=code_commune, size=size)
+        params = StationParams(code_commune_station=code_commune, size=size)
+        return self.api.get_stations(params=params)
 
     def get_observations_by_station(
         self, code_station: str, size: int = 10
     ) -> List[ObservationTr]:
-        return self.api.get_observations_tr(code_station=code_station, size=size)
+        params = ObservationTrParams(code_station=[code_station], size=size)
+        return self.api.get_observations_tr(params=params)
 
     def get_observations_elab_by_station(
         self, code_station: str, size: int = 10
     ) -> List[ObsElab]:
-        return self.api.get_obs_elab(code_station=code_station, size=size)
+        params = ObsElabParams(code_station=[code_station], size=size)
+        return self.api.get_obs_elab(params=params)

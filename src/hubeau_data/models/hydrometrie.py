@@ -1,11 +1,11 @@
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class Site(BaseModel):
     altitude_site: Optional[float] = None
-    code_commune_site: List[str]  # or List[Any] if unsure
+    code_commune_site: List[str]
     code_cours_eau: str
     code_departement: List[str]
     code_entite_hydro_site: str
@@ -21,7 +21,7 @@ class Site(BaseModel):
     coordonnee_y_site: float
     date_maj_site: str
     date_premiere_donnee_dispo_site: None = None
-    geometry: Dict[str, Any]  # or use a GeoJSON model if you want
+    geometry: Dict[str, Any]
     grandeur_hydro: str
     influence_generale_site: Optional[int] = None
     latitude_site: float
@@ -66,7 +66,7 @@ class Station(BaseModel):
     date_ouverture_station: str
     descriptif_station: Optional[str] = None
     en_service: bool
-    geometry: Optional[Dict[str, Any]] = None  # or use a GeoJSON model if you want
+    geometry: Optional[Dict[str, Any]] = None
     influence_locale_station: Optional[int] = None
     latitude_station: float
     libelle_commune: str
@@ -84,14 +84,14 @@ class Station(BaseModel):
 
 
 class ObservationTr(BaseModel):
-    code_continuite: Optional[int] = None  # Adjust if sometimes string
-    code_methode_obs: Optional[int] = None  # API returns int
-    code_qualification_obs: Optional[int] = None  # API returns int
+    code_continuite: Optional[int] = None
+    code_methode_obs: Optional[int] = None
+    code_qualification_obs: Optional[int] = None
     code_site: Optional[str] = None
     code_station: Optional[str] = None
-    code_statut: Optional[int] = None  # API returns int; adjust if sometimes string
-    code_systeme_alti_serie: Optional[int] = None  # API returns int
-    date_debut_serie: Optional[str] = None  # or datetime, depending on your use case
+    code_statut: Optional[int] = None
+    code_systeme_alti_serie: Optional[int] = None
+    date_debut_serie: Optional[str] = None
     date_fin_serie: Optional[str] = None
     date_obs: Optional[str] = None
     grandeur_hydro: Optional[str] = None
@@ -101,7 +101,7 @@ class ObservationTr(BaseModel):
     libelle_qualification_obs: Optional[str] = None
     libelle_statut: Optional[str] = None
     longitude: Optional[float] = None
-    resultat_obs: Optional[float] = None  # or int, depending on data
+    resultat_obs: Optional[float] = None
 
 
 class ObsElab(BaseModel):
@@ -109,13 +109,120 @@ class ObsElab(BaseModel):
     code_qualification: Optional[int] = None
     code_site: Optional[str] = None
     code_station: Optional[str] = None
-    code_statut: Optional[int] = None  # or str, see API
-    date_obs_elab: Optional[str] = None  # or datetime
-    date_prod: Optional[str] = None  # or datetime
-    grandeur_hydro_elab: Optional[str] = None  # e.g. "QmnJ", "H"
+    code_statut: Optional[int] = None
+    date_obs_elab: Optional[str] = None
+    date_prod: Optional[str] = None
+    grandeur_hydro_elab: Optional[str] = None
     latitude: Optional[float] = None
     libelle_methode: Optional[str] = None
     libelle_qualification: Optional[str] = None
     libelle_statut: Optional[str] = None
     longitude: Optional[float] = None
-    resultat_obs_elab: Optional[float] = None  # or int, depending on the data
+    resultat_obs_elab: Optional[float] = None
+
+
+# --- Query Params models ---
+
+
+class SiteParams(BaseModel):
+    """
+    Query parameters for hydrometric sites.
+    see: https://hubeau.eaufrance.fr/page/api-hydrometrie#/hydrometrie/sites
+    """
+
+    code_site: Optional[List[str]] = Field(None, description="Site code(s)")
+    code_departement: Optional[List[str]] = Field(
+        None, description="Department code(s)"
+    )
+    code_commune_site: Optional[List[str]] = Field(None, description="Commune code(s)")
+    code_region: Optional[List[str]] = Field(None, description="Region code(s)")
+    code_cours_eau: Optional[str] = Field(None, description="Watercourse code")
+    libelle_site: Optional[str] = Field(None, description="Site label (partial match)")
+    type_site: Optional[str] = Field(None, description="Site type")
+    size: Optional[int] = Field(
+        None, ge=1, le=10000, description="Maximum number of results"
+    )
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    distance: Optional[float] = Field(None, description="Search radius in km")
+
+    model_config = ConfigDict(extra="allow")
+
+
+class StationParams(BaseModel):
+    """
+    Query parameters for hydrometric stations.
+    see: https://hubeau.eaufrance.fr/page/api-hydrometrie#/hydrometrie/stations
+    """
+
+    code_station: Optional[List[str]] = Field(None, description="Station code(s)")
+    code_site: Optional[List[str]] = Field(None, description="Site code(s)")
+    code_commune_station: Optional[str] = Field(None, description="Commune code")
+    code_departement: Optional[str] = Field(None, description="Department code")
+    code_region: Optional[str] = Field(None, description="Region code")
+    code_cours_eau: Optional[str] = Field(None, description="Watercourse code")
+    libelle_station: Optional[str] = Field(
+        None, description="Station label (partial match)"
+    )
+    en_service: Optional[bool] = Field(None, description="In service filter")
+    size: Optional[int] = Field(
+        None, ge=1, le=10000, description="Maximum number of results"
+    )
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    distance: Optional[float] = Field(None, description="Search radius in km")
+
+    model_config = ConfigDict(extra="allow")
+
+
+class ObsElabParams(BaseModel):
+    """
+    Query parameters for elaborated hydrometric observations.
+    see: https://hubeau.eaufrance.fr/page/api-hydrometrie#/hydrometrie/obs_elab
+    """
+
+    code_station: Optional[List[str]] = Field(None, description="Station code(s)")
+    code_site: Optional[List[str]] = Field(None, description="Site code(s)")
+    grandeur_hydro_elab: Optional[str] = Field(
+        None, description="QmnJ, QmM, HIXM, HIXnJ, QINM, QINnJ, QixM, QIXnJ"
+    )
+    date_debut_obs_elab: Optional[str] = Field(
+        None, description="Start date (ISO 8601)"
+    )
+    date_fin_obs_elab: Optional[str] = Field(None, description="End date (ISO 8601)")
+    resultat_min: Optional[float] = None
+    resultat_max: Optional[float] = None
+    size: Optional[int] = Field(None, ge=1, le=20000)
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    distance: Optional[float] = Field(None, description="Search radius in km")
+    sort: Optional[str] = Field("asc", pattern="^(asc|desc)$")
+
+    model_config = ConfigDict(extra="allow")
+
+
+class ObservationTrParams(BaseModel):
+    """
+    Query parameters for hydrometric real-time observations.
+    'Tr' is 'Temps réel'
+    see: https://hubeau.eaufrance.fr/page/api-hydrometrie#/hydrometrie/observations
+    """
+
+    code_station: Optional[List[str]] = Field(None, description="Station code(s)")
+    code_site: Optional[List[str]] = Field(None, description="Site code(s)")
+    grandeur_hydro: Optional[List[str]] = Field(
+        None, description="Hydrometric magnitude: H (height) or Q (flow)"
+    )
+    date_debut_obs: Optional[str] = Field(None, description="Start date (ISO 8601)")
+    date_fin_obs: Optional[str] = Field(None, description="End date (ISO 8601)")
+    size: Optional[int] = Field(
+        None, ge=1, le=20000, description="Maximum number of results"
+    )
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    distance: Optional[float] = Field(None, description="Search radius in km")
+    sort: Optional[str] = Field(
+        "desc", pattern="^(asc|desc)$", description="Sort order by date_obs"
+    )
+
+    model_config = ConfigDict(extra="allow")

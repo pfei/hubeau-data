@@ -1,37 +1,48 @@
-from typing import Any, List
+from typing import List, Optional
 
 import httpx
 
-from hubeau_data.models.hydrometrie import ObsElab, ObservationTr, Site, Station
+from hubeau_data.models.hydrometrie import (
+    ObsElab,
+    ObsElabParams,
+    ObservationTr,
+    ObservationTrParams,
+    Site,
+    SiteParams,
+    Station,
+    StationParams,
+)
 
 
 class HydrometrieAPI:
     BASE_URL = "https://hubeau.eaufrance.fr/api/v2/hydrometrie"
 
-    def get_sites(self, **kwargs: Any) -> List[Site]:
+    def get_sites(self, params: Optional[SiteParams] = None) -> List[Site]:
         url = f"{self.BASE_URL}/referentiel/sites"
-        resp = httpx.get(url, params=kwargs)
+        query_params = params.model_dump(exclude_none=True) if params else {}
+        resp = httpx.get(url, params=query_params)
         resp.raise_for_status()
-        data = resp.json()["data"]
-        return [Site(**item) for item in data]
+        return [Site(**item) for item in resp.json()["data"]]
 
-    def get_stations(self, **kwargs: Any) -> List[Station]:
+    def get_stations(self, params: Optional[StationParams] = None) -> List[Station]:
         url = f"{self.BASE_URL}/referentiel/stations"
-        resp = httpx.get(url, params=kwargs)
+        query_params = params.model_dump(exclude_none=True) if params else {}
+        resp = httpx.get(url, params=query_params)
         resp.raise_for_status()
-        data = resp.json()["data"]
-        return [Station(**item) for item in data]
+        return [Station(**item) for item in resp.json()["data"]]
 
-    def get_observations_tr(self, **kwargs: Any) -> List[ObservationTr]:
+    def get_observations_tr(
+        self, params: Optional[ObservationTrParams] = None
+    ) -> List[ObservationTr]:
         url = f"{self.BASE_URL}/observations_tr"
-        resp = httpx.get(url, params=kwargs)
+        query_params = params.model_dump(exclude_none=True) if params else {}
+        resp = httpx.get(url, params=query_params)
         resp.raise_for_status()
-        data = resp.json()["data"]
-        return [ObservationTr(**item) for item in data]
+        return [ObservationTr(**item) for item in resp.json()["data"]]
 
-    def get_obs_elab(self, **kwargs: Any) -> List[ObsElab]:
+    def get_obs_elab(self, params: Optional[ObsElabParams] = None) -> List[ObsElab]:
         url = f"{self.BASE_URL}/obs_elab"
-        resp = httpx.get(url, params=kwargs)
+        query_params = params.model_dump(exclude_none=True) if params else {}
+        resp = httpx.get(url, params=query_params)
         resp.raise_for_status()
-        data = resp.json()["data"]
-        return [ObsElab(**item) for item in data]
+        return [ObsElab(**item) for item in resp.json()["data"]]
