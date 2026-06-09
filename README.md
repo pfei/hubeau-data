@@ -1,139 +1,95 @@
-> ⚠️ **Pre-Alpha Notice**
->
-> This project is in a **very early, pre-alpha state**.\
-> The goal is to become a solid, typed, and reference Python client for the Hubeau APIs.
-> Expect rapid changes, breaking updates, and incomplete coverage.
-> Contributions, feedback, and issue reports are very welcome!
-
 # hubeau-data
 
+[![CI](https://github.com/pfei/hubeau-data/actions/workflows/ci.yml/badge.svg)](https://github.com/pfei/hubeau-data/actions/workflows/ci.yml)
 [![Python Version](https://img.shields.io/badge/python-3.13+-blue.svg)](https://www.python.org/)
 [![Checked with mypy](https://img.shields.io/badge/mypy-strict-green.svg)](https://mypy.readthedocs.io/en/stable/config_file.html#using-a-pyproject-toml-file)
 [![Linting: ruff](https://img.shields.io/badge/linting-ruff-orange.svg)](https://github.com/astral-sh/ruff)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Package Manager: uv](https://img.shields.io/badge/managed%20by-uv-purple.svg)](https://github.com/astral-sh/uv)
 
-Pythonic, typed, and modern client for the Hubeau water data APIs.
+Typed, modern Python client for the [Hub'Eau](https://hubeau.eaufrance.fr/) water data APIs.
 
-## API Coverage and Status
-
-| API Name | Status | Notes |
-| --------------------- | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Qualité Rivières** | ⚠️ Limited Support | Initial implementation with known limitations. API has pagination issues and high error rates (~60%) when querying large datasets. Best used for targeted queries rather than bulk data extraction. |
-| **Hydrométrie** | ✅ Supported | Full access to sites, stations, and real-time or elaborated observations. Implemented via unified and simple client layers. |
-| **Other Hubeau APIs** | 📅 Planned | Will be added in future releases. |
-
-> **Note on Qualité Rivières API:** > Our exploration revealed significant rate limiting and stability issues when attempting exhaustive data extraction. The API works well for targeted queries but may not be suitable for comprehensive data analysis across all stations. See the `scripts/qualite_rivieres/` directory for exploration tools and findings.
-
-## Features
-
-- Typed, Pythonic client for the Hubeau water data APIs
-- Easy querying of water quality, hydrometry observations, and station data
-- Returns results as Pydantic v2 models for strict runtime type safety
-- Ready for use in data science workflows with production-ready `pandas` and `geopandas` DataFrames
-
-## Development Model
-
-- Modern Python (**3.13+**)
-- Strict typing throughout the codebase (`mypy --strict`)
-- Enforced linting and formatting via fast Rust-powered tooling (`ruff`)
-- Standardized package architecture adhering to the [src-layout](https://realpython.com/python-application-layouts/)
-- Built using **`hatchling`** as the PEP 517 build backend and **`uv`** for dependency management
+Hub'Eau exposes 15+ REST APIs for French national water data — but no official typed Python client exists.
+This library fills that gap: Pydantic v2 models, strict typing, and a clean interface ready for data science workflows.
 
 ## Quickstart
 
 ```python
 from hubeau_data.client import HubeauClient
+from hubeau_data.models.hydrometrie import ObservationTrParams
 
 client = HubeauClient()
 
-# 1. Qualité Rivières Endpoint
-stations = client.qualite_rivieres.get_stations(libelle_commune="Paris", size=3)
-print(stations)
+# Hydrométrie — real-time observations
+params = ObservationTrParams(code_station=["Y120201001"], size=3)
+observations = client.hydrometrie.get_observations_tr(params=params)
+# → List[ObservationTr] — fully typed Pydantic models
+print(observations[0].date_obs, observations[0].resultat_obs)
 
-# 2. Hydrométrie Endpoint
-observations = client.hydrometrie.get_observations_tr(code_station="Y120201001", size=3)
-print(observations)
+# Qualité Rivières — water quality stations
+stations = client.qualite_rivieres.get_stations(libelle_commune="Paris", size=3)
+print(stations[0].code_station, stations[0].libelle_station)
 ```
 
-## Example Notebooks
+## API Coverage
 
-Continuously updated example notebooks and dashboards are available under the `examples/` directory.
+| API | Status | Notes |
+|-----|--------|-------|
+| **Hydrométrie** | ✅ Supported | Sites, stations, real-time and elaborated observations. Typed `Params` models for all endpoints. |
+| **Qualité Rivières** | ⚠️ Partial | Works well for targeted queries. The upstream API has known stability issues under load — see `scripts/qualite_rivieres/` for findings. |
+| **Other Hub'Eau APIs** | 📅 Planned | |
 
-You can run them locally using Jupyter Lab or Notebook instantly through `uv`:
+## Features
+
+- Pydantic v2 models for all responses — strict runtime validation, IDE autocomplete
+- Typed query `Params` models for every endpoint — no more `**kwargs`
+- `HubeauClient` unified entry point + `SimpleHydrometrieClient` for common patterns
+- Ready for pandas / geopandas data science workflows
+
+## Stack
+
+- Python 3.13+, `mypy --strict`, `ruff`, `uv`, `hatchling`, src-layout
+- `pytest-httpx` mocked test suite — CI runs without network dependency
+
+## Installation & Development
+
+```zsh
+git clone https://github.com/pfei/hubeau-data.git
+cd hubeau-data
+uv sync
+```
+
+```zsh
+uv run ruff check .           # lint
+uv run mypy .                 # type check
+uv run pytest -m "not live"   # fast mocked tests (CI)
+uv run pytest -m "live" -s    # real network integration tests
+```
+
+## Examples
+
+Notebooks and scripts under `examples/` and `scripts/`. Run instantly with:
 
 ```zsh
 uv run jupyter lab
 ```
 
-## Installation & Development
+Exploration scripts by API under `scripts/`:
 
-This project leverages [uv](https://github.com/astral-sh/uv) for fast, modern dependency and workspace orchestration.
+- `scripts/hydrometrie/` — station and observation exploration
+- `scripts/qualite_rivieres/` — API behavior analysis, pagination findings
 
-### 1. Project Setup
+## Roadmap
 
-Clone the repository and synchronize the environment. `uv` will automatically
-provision Python 3.13, create a virtual environment, and install the package along with its development groups:
-
-```zsh
-git clone https://github.com/your-username/hubeau-data.git
-cd hubeau-data
-uv sync
-```
-
-### 2. Quality Assurance Commands
-
-Run the full local verification suite through `uv run`:
-
-- **Linting & Formatting:**
-  ```zsh
-  uv run ruff check .
-  ```
-- **Type Checking (Strict Mode):**
-  ```zsh
-  uv run mypy .
-  ```
-- **Run Fast Mocked Test Suite:**
-  ```zsh
-  uv run pytest -m "not live"
-  ```
-- **Run Real Network Integration Tests:**
-  ```zsh
-  uv run pytest -m "live" -s
-  ```
-
-## How Imports Work
-
-This project uses the modern Python **src-layout** combined with a PEP 517 build system powered by `hatchling`.
-
-When you run `uv sync`, the project is automatically installed in **editable mode** (the standard PEP 660 equivalent of `pip install -e .`) inside the `.venv` directory. An optimized import hook proxy is placed in the virtual environment's `site-packages`, routing any package calls straight to your local `src/hubeau_data` directory.
-
-This allows you to safely use absolute imports across any test, script, or notebook without manual path manipulations:
-
-```python
-from hubeau_data.client import HubeauClient
-```
-
-Always prefix your execution commands with `uv run` (e.g., `uv run pytest`, `uv run demo.py`) to ensure Python looks up the package matching your isolated workspace environment. Alternatively, you can activate the virtual environment manually within your shell:
-
-```zsh
-source .venv/bin/activate
-```
-
-## Inspect Scripts
-
-Scripts for exploring and inspecting the Hubeau APIs are organized by endpoint under the `scripts/` directory. For example:
-
-- **qualite_rivieres/**: Tools for the "Qualité Rivières" API.
-  - `explore.py`: Interactive exploration of the API.
-  - `analyze_time_series.py`: Paginated fetching and analysis across stations with built-in API error fallback.
-
-**Usage:**
-
-```zsh
-uv run python scripts/qualite_rivieres/explore.py
-```
+- [ ] Typed `Params` models for all `qualite_rivieres` endpoints (in progress)
+- [ ] Optional dependency groups — `pandas`, `geopandas`, `matplotlib` as extras
+- [ ] `CHANGELOG.md` + `CONTRIBUTING.md`
+- [ ] Rich examples — notebooks and scripts for hydrometrie + qualite_rivieres
+- [ ] API health check scripts (responsiveness, uptime, error rate)
+- [ ] Full Hub'Eau API coverage (piezometry, drinking water, flow conditions...)
+- [ ] Async client (`httpx.AsyncClient`)
+- [ ] PyPI release
 
 ## License
 
-MIT License © Pierre Feilles
+MIT © Pierre Feilles
