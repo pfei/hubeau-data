@@ -11,6 +11,7 @@ from httpx import ReadTimeout
 
 from hubeau_data.client import HubeauClient
 from hubeau_data.models.hydrometrie import ObservationTrParams
+from hubeau_data.models.qualite_rivieres import StationPcParams
 
 
 def run_demo() -> None:
@@ -28,7 +29,7 @@ def run_demo() -> None:
     try:
         # Fetching stations in Paris (75) area
         stations_qr = client.qualite_rivieres.get_stations(
-            code_departement="75", size=3
+            params=StationPcParams(code_departement=["75"], size=3)
         )
 
         print(f"✓ Found {len(stations_qr)} stations in Paris area.")

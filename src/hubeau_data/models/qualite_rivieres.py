@@ -1,6 +1,6 @@
 from typing import Generic, List, Optional, TypeVar, Union
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 
 from hubeau_data.models.geojson import Geometry
 
@@ -235,6 +235,115 @@ class StationPc(BaseModel):
     superficie_bassin_versant_reel: Optional[float] = None
     superficie_bassin_versant_topo: Optional[float] = None
     geometry: Optional["Geometry"] = None  # Use GeoJSON type, forward ref if needed
+
+
+# --- Query Params models ---
+
+
+class StationPcParams(BaseModel):
+    """
+    Query parameters for physico-chemical monitoring stations.
+    see: https://hubeau.eaufrance.fr/page/api-qualite-cours-deau#/
+    """
+
+    code_station: Optional[List[str]] = Field(
+        None, description="Station code(s) Sandre"
+    )
+    libelle_station: Optional[List[str]] = Field(None, description="Station label(s)")
+    code_commune: Optional[List[str]] = Field(None, description="Commune code(s) INSEE")
+    libelle_commune: Optional[List[str]] = Field(None, description="Commune label(s)")
+    code_departement: Optional[List[str]] = Field(
+        None, description="Department code(s)"
+    )
+    libelle_departement: Optional[List[str]] = Field(
+        None, description="Department label(s)"
+    )
+    code_region: Optional[List[str]] = Field(None, description="Region code(s) INSEE")
+    libelle_region: Optional[List[str]] = Field(None, description="Region label(s)")
+    code_cours_eau: Optional[List[str]] = Field(None, description="Watercourse code(s)")
+    nom_cours_eau: Optional[List[str]] = Field(None, description="Watercourse name(s)")
+    code_masse_eau: Optional[List[str]] = Field(None, description="Water body code(s)")
+    code_bassin_dce: Optional[List[str]] = Field(
+        None, description="Basin code(s) Sandre"
+    )
+    code_sous_bassin: Optional[List[str]] = Field(None, description="Sub-basin code(s)")
+    type_entite_hydro: Optional[List[str]] = Field(
+        None, description="Hydrographic entity type(s)"
+    )
+    size: Optional[int] = Field(
+        None, ge=1, le=20000, description="Page size (max 20000)"
+    )
+    sort: Optional[str] = Field(
+        "asc", pattern="^(asc|desc)$", description="Sort order by code_station"
+    )
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    distance: Optional[float] = Field(None, description="Search radius in km")
+
+    model_config = ConfigDict(extra="allow")
+
+
+class AnalysePcParams(BaseModel):
+    """
+    Query parameters for physico-chemical analyses.
+    see: https://hubeau.eaufrance.fr/page/api-qualite-cours-deau#/
+    """
+
+    code_station: Optional[List[str]] = Field(
+        None, description="Station code(s) Sandre"
+    )
+    libelle_station: Optional[List[str]] = Field(None, description="Station label(s)")
+    code_parametre: Optional[List[str]] = Field(
+        None, description="Parameter code(s) Sandre"
+    )
+    libelle_parametre: Optional[List[str]] = Field(
+        None, description="Parameter label(s)"
+    )
+    code_support: Optional[List[str]] = Field(None, description="Support code(s)")
+    code_fraction: Optional[List[str]] = Field(
+        None, description="Fraction code(s) Sandre"
+    )
+    code_groupe_parametres: Optional[List[str]] = Field(
+        None, description="Parameter group code(s)"
+    )
+    code_qualification: Optional[List[str]] = Field(
+        None, description="Qualification code(s)"
+    )
+    code_statut: Optional[List[str]] = Field(None, description="Status code(s)")
+    code_reseau: Optional[List[str]] = Field(None, description="Network code(s)")
+    code_commune: Optional[List[str]] = Field(None, description="Commune code(s) INSEE")
+    code_departement: Optional[List[str]] = Field(
+        None, description="Department code(s)"
+    )
+    code_region: Optional[List[str]] = Field(None, description="Region code(s) INSEE")
+    code_cours_eau: Optional[List[str]] = Field(None, description="Watercourse code(s)")
+    code_masse_eau: Optional[List[str]] = Field(None, description="Water body code(s)")
+    code_bassin_dce: Optional[List[str]] = Field(None, description="Basin code(s)")
+    code_sous_bassin: Optional[List[str]] = Field(None, description="Sub-basin code(s)")
+    code_operation: Optional[List[str]] = Field(None, description="Operation code(s)")
+    date_debut_prelevement: Optional[str] = Field(
+        None, description="Sample start date (YYYY-MM-DD)"
+    )
+    date_fin_prelevement: Optional[str] = Field(
+        None, description="Sample end date (YYYY-MM-DD)"
+    )
+    date_debut_maj: Optional[str] = Field(
+        None, description="Update start date (YYYY-MM-DD)"
+    )
+    date_fin_maj: Optional[str] = Field(
+        None, description="Update end date (YYYY-MM-DD)"
+    )
+    size: Optional[int] = Field(
+        None, ge=1, le=20000, description="Page size (max 20000)"
+    )
+    sort: Optional[str] = Field(
+        "asc", pattern="^(asc|desc)$", description="Sort order by date_prelevement"
+    )
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    distance: Optional[float] = Field(None, description="Search radius in km")
+
+    model_config = ConfigDict(extra="allow")
 
 
 # --- Envelope Aliases ---

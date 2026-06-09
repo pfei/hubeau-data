@@ -1,53 +1,48 @@
-from typing import Any, List, Optional
+from typing import List, Optional
 
 import httpx
 
-from hubeau_data.models.qualite_rivieres import AnalysePc, StationPc
+from hubeau_data.models.qualite_rivieres import (
+    AnalysePc,
+    AnalysePcParams,
+    StationPc,
+    StationPcParams,
+)
 
 
 class QualiteRivieresAPI:
     BASE_URL = "https://hubeau.eaufrance.fr/api/v2/qualite_rivieres"
 
-    def get_stations(
-        self, libelle_commune: Optional[str] = None, size: int = 10, **params: Any
-    ) -> List[StationPc]:
-        """
-        Fetch a list of stations, optionally filtered by commune name.
-        """
+    def get_stations(self, params: Optional[StationPcParams] = None) -> List[StationPc]:
+        """Fetch physico-chemical monitoring stations."""
         url = f"{self.BASE_URL}/station_pc"
-        params["size"] = size
-        if libelle_commune:
-            params["libelle_commune"] = libelle_commune
-        resp = httpx.get(url, params=params, timeout=30)
+        query_params = params.model_dump(exclude_none=True) if params else {}
+        resp = httpx.get(url, params=query_params, timeout=30)
         resp.raise_for_status()
-        data = resp.json().get("data", [])
-        return [StationPc(**item) for item in data]
+        return [StationPc(**item) for item in resp.json().get("data", [])]
 
     def get_analyses(
         self,
-        code_station: Optional[str] = None,
-        size: int = 100,
+        params: Optional[AnalysePcParams] = None,
         max_records: int = 1000,
-        **params: Any,
     ) -> List[AnalysePc]:
-        """
-        Fetch analyses, paginated, for a station. Returns up to max_records.
-        """
+        """Fetch physico-chemical analyses, paginated. Returns up to max_records."""
         url = f"{self.BASE_URL}/analyse_pc"
-        params["size"] = size
-        if code_station:
-            params["code_station"] = code_station
-        results: List[Any] = []
+        query_params = params.model_dump(exclude_none=True) if params else {}
+        # ensure a page size — default 100 if not set
+        page_size = query_params.get("size", 100)
+        query_params["size"] = page_size
+        results: List[AnalysePc] = []
         page = 1
         while len(results) < max_records:
-            params["page"] = page
-            resp = httpx.get(url, params=params, timeout=30)
+            query_params["page"] = page
+            resp = httpx.get(url, params=query_params, timeout=30)
             resp.raise_for_status()
             data = resp.json().get("data", [])
             if not data:
                 break
             results.extend([AnalysePc(**item) for item in data])
-            if len(data) < size:
-                break  # Last page
+            if len(data) < page_size:
+                break
             page += 1
         return results[:max_records]

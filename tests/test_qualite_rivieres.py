@@ -14,7 +14,12 @@ import pytest
 from pytest_httpx import HTTPXMock
 
 from hubeau_data.client import HubeauClient
-from hubeau_data.models.qualite_rivieres import AnalysePc, StationPc
+from hubeau_data.models.qualite_rivieres import (
+    AnalysePc,
+    AnalysePcParams,
+    StationPc,
+    StationPcParams,
+)
 
 
 @pytest.fixture(autouse=True, scope="session")
@@ -51,7 +56,8 @@ def test_get_stations_mocked(httpx_mock: HTTPXMock) -> None:
     )
 
     client = HubeauClient()
-    stations = client.qualite_rivieres.get_stations(libelle_commune="Paris", size=1)
+    params = StationPcParams(libelle_commune=["Paris"], size=1)
+    stations = client.qualite_rivieres.get_stations(params=params)
 
     assert isinstance(stations, list)
     assert len(stations) == 1
@@ -81,9 +87,8 @@ def test_get_analyses_mocked(httpx_mock: HTTPXMock) -> None:
     )
 
     client = HubeauClient()
-    analyses = client.qualite_rivieres.get_analyses(
-        code_station="01001000", size=1, max_records=1
-    )
+    params = AnalysePcParams(code_station=["01001000"], size=1)
+    analyses = client.qualite_rivieres.get_analyses(params=params, max_records=1)
 
     assert isinstance(analyses, list)
     assert len(analyses) == 1
@@ -99,7 +104,9 @@ def test_get_analyses_mocked(httpx_mock: HTTPXMock) -> None:
 def test_get_stations_live() -> None:
     """Perform a real API call to verify the station endpoint data structure."""
     client = HubeauClient()
-    stations = client.qualite_rivieres.get_stations(libelle_commune="Paris", size=1)
+    params = StationPcParams(libelle_commune=["Paris"], size=1)
+    stations = client.qualite_rivieres.get_stations(params=params)
+
     assert isinstance(stations, list)
     if stations:
         assert isinstance(stations[0], StationPc)
@@ -118,12 +125,15 @@ def test_get_stations_live() -> None:
 def test_get_analyses_live() -> None:
     """Perform a real API call to verify the analysis endpoint data structure."""
     client = HubeauClient()
-    stations = client.qualite_rivieres.get_stations(libelle_commune="Paris", size=1)
+    station_params = StationPcParams(libelle_commune=["Paris"], size=1)
+    stations = client.qualite_rivieres.get_stations(params=station_params)
     if not stations:
         pytest.skip("No stations available for testing")
+    analyse_params = AnalysePcParams(code_station=[stations[0].code_station], size=1)
     analyses = client.qualite_rivieres.get_analyses(
-        code_station=stations[0].code_station, size=1, max_records=1
+        params=analyse_params, max_records=1
     )
+
     assert isinstance(analyses, list)
     if analyses:
         assert isinstance(analyses[0], AnalysePc)
