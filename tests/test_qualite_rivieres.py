@@ -9,6 +9,7 @@ To run the live integration tests:
 
 import re
 
+import httpx
 import pytest
 from pytest_httpx import HTTPXMock
 
@@ -107,6 +108,13 @@ def test_get_stations_live() -> None:
 
 
 @pytest.mark.live
+@pytest.mark.xfail(
+    reason=(
+        "Qualité Rivières API has known stability issues (timeouts, ~60% error rate)"
+    ),
+    raises=httpx.ReadTimeout,
+    strict=False,
+)
 def test_get_analyses_live() -> None:
     """Perform a real API call to verify the analysis endpoint data structure."""
     client = HubeauClient()

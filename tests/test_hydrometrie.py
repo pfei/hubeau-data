@@ -1,110 +1,293 @@
-import httpx
-import pytest
+"""
+Tests for the Hydrométrie API client.
+To run only the fast mocked tests:
+    uv run pytest -m "not live"
+To run the live integration tests:
+    uv run pytest -m "live" -s
+"""
 
-from hubeau_data.client import SimpleHydrometrieClient
+import re
+
+import pytest
+from pytest_httpx import HTTPXMock
+
+from hubeau_data.client import HubeauClient, SimpleHydrometrieClient
 from hubeau_data.models.hydrometrie import ObsElab, ObservationTr, Site, Station
 
-# --- FIXTURES ---
+
+@pytest.fixture(autouse=True, scope="session")
+def api_test_notice() -> None:
+    print(
+        "\n[INFO] Live tests make real API calls and may be slow. "
+        "If you experience timeouts, check your network connection or try again later."
+    )
 
 
-# @pytest.fixture
-# def client() -> SimpleHydrometrieClient:
-#     """Initialize the client for test injection."""
-#     return SimpleHydrometrieClient()
+# ==============================================================================
+# 1. MOCKED TESTS (Fast, deterministic, safe for CI)
+# ==============================================================================
+
+MINIMAL_SITE = {
+    "code_commune_site": ["95500"],
+    "code_cours_eau": "A1234567",
+    "code_departement": ["95"],
+    "code_entite_hydro_site": "A123456701",
+    "code_projection": 26,
+    "code_region": ["11"],
+    "code_site": "A1234567",
+    "code_troncon_hydro_site": "A123456700",
+    "code_zone_hydro_site": "A123",
+    "coordonnee_x_site": 2.35,
+    "coordonnee_y_site": 48.85,
+    "date_maj_site": "2024-01-01",
+    "geometry": {"type": "Point", "coordinates": [2.35, 48.85]},
+    "grandeur_hydro": "H",
+    "latitude_site": 48.85,
+    "libelle_commune": ["Cergy"],
+    "libelle_departement": ["Val-d'Oise"],
+    "libelle_region": ["Île-de-France"],
+    "libelle_site": "Site de test",
+    "longitude_site": 2.35,
+    "premier_mois_annee_hydro_site": 1,
+    "premier_mois_etiage_site": 7,
+    "statut_site": 1,
+    "type_site": "SOURCE",
+    "uri_cours_eau": "http://id.eaufrance.fr/CEA/A1234567",
+}
+
+MINIMAL_STATION = {
+    "code_commune_station": "95500",
+    "code_cours_eau": "A1234567",
+    "code_departement": "95",
+    "code_projection": 26,
+    "code_regime_station": 1,
+    "code_region": "11",
+    "code_site": "A1234567",
+    "code_station": "A123456701",
+    "coordonnee_x_station": 2.35,
+    "coordonnee_y_station": 48.85,
+    "date_maj_station": "2024-01-01",
+    "date_ouverture_station": "2000-01-01",
+    "en_service": True,
+    "latitude_station": 48.85,
+    "libelle_commune": "Cergy",
+    "libelle_departement": "Val-d'Oise",
+    "libelle_region": "Île-de-France",
+    "libelle_site": "Site de test",
+    "libelle_station": "Station de test",
+    "longitude_station": 2.35,
+    "qualification_donnees_station": 1,
+    "type_station": "DEF",
+    "uri_cours_eau": "http://id.eaufrance.fr/CEA/A1234567",
+}
+
+MINIMAL_OBSERVATION_TR = {
+    "code_station": "Y120201001",
+    "date_obs": "2026-06-01T12:00:00Z",
+    "resultat_obs": 42.5,
+    "grandeur_hydro": "H",
+}
+
+MINIMAL_OBS_ELAB = {
+    "code_station": "Y390001001",
+    "date_obs_elab": "2026-01-01",
+    "resultat_obs_elab": 150.0,
+    "grandeur_hydro_elab": "QmM",
+}
 
 
-# @pytest.fixture
-# def mock_obs_data() -> dict:
-#     """Mock data based on real Hubeau API response schema."""
-#     return {
-#         "data": [
-#             {
-#                 "code_station": "K066331001",
-#                 "date_obs": "2026-06-08T14:00:00Z",
-#                 "resultat_obs": 12.5,
-#                 "libelle_qualification_obs": "Qualifiée",
-#             }
-#         ]
-#     }
+def test_get_sites_mocked(httpx_mock: HTTPXMock) -> None:
+    """Test get_sites using a mocked HTTP response."""
+    httpx_mock.add_response(
+        url=re.compile(r".*/api/v2/hydrometrie/referentiel/sites.*"),
+        json={"count": 1, "data": [MINIMAL_SITE]},
+        status_code=200,
+    )
+    client = HubeauClient()
+    sites = client.hydrometrie.get_sites()
+    assert isinstance(sites, list)
+    assert len(sites) == 1
+    assert isinstance(sites[0], Site)
+    assert sites[0].code_site == "A1234567"
 
 
-# --- TESTS --
+def test_get_stations_mocked(httpx_mock: HTTPXMock) -> None:
+    """Test get_stations using a mocked HTTP response."""
+    httpx_mock.add_response(
+        url=re.compile(r".*/api/v2/hydrometrie/referentiel/stations.*"),
+        json={"count": 1, "data": [MINIMAL_STATION]},
+        status_code=200,
+    )
+    client = HubeauClient()
+    stations = client.hydrometrie.get_stations()
+    assert isinstance(stations, list)
+    assert len(stations) == 1
+    assert isinstance(stations[0], Station)
+    assert stations[0].code_station == "A123456701"
+
+
+def test_get_observations_tr_mocked(httpx_mock: HTTPXMock) -> None:
+    """Test get_observations_tr using a mocked HTTP response."""
+    httpx_mock.add_response(
+        url=re.compile(r".*/api/v2/hydrometrie/observations_tr.*"),
+        json={"count": 1, "data": [MINIMAL_OBSERVATION_TR]},
+        status_code=200,
+    )
+    client = HubeauClient()
+    obs = client.hydrometrie.get_observations_tr()
+    assert isinstance(obs, list)
+    assert len(obs) == 1
+    assert isinstance(obs[0], ObservationTr)
+    assert obs[0].code_station == "Y120201001"
+
+
+def test_get_obs_elab_mocked(httpx_mock: HTTPXMock) -> None:
+    """Test get_obs_elab using a mocked HTTP response."""
+    httpx_mock.add_response(
+        url=re.compile(r".*/api/v2/hydrometrie/obs_elab.*"),
+        json={"count": 1, "data": [MINIMAL_OBS_ELAB]},
+        status_code=200,
+    )
+    client = HubeauClient()
+    obs = client.hydrometrie.get_obs_elab()
+    assert isinstance(obs, list)
+    assert len(obs) == 1
+    assert isinstance(obs[0], ObsElab)
+    assert obs[0].grandeur_hydro_elab == "QmM"
+
+
+def test_simple_client_sites_by_department_mocked(httpx_mock: HTTPXMock) -> None:
+    httpx_mock.add_response(
+        url=re.compile(r".*/api/v2/hydrometrie/referentiel/sites.*"),
+        json={"count": 1, "data": [MINIMAL_SITE]},
+        status_code=200,
+    )
+    client = SimpleHydrometrieClient()
+    sites = client.get_sites_by_department("95", size=1)
+    assert len(sites) > 0
+    assert hasattr(sites[0], "libelle_site")
+
+
+def test_simple_client_stations_by_commune_mocked(httpx_mock: HTTPXMock) -> None:
+    httpx_mock.add_response(
+        url=re.compile(r".*/api/v2/hydrometrie/referentiel/stations.*"),
+        json={"count": 1, "data": [MINIMAL_STATION]},
+        status_code=200,
+    )
+    client = SimpleHydrometrieClient()
+    stations = client.get_stations_by_commune("75056", size=1)
+    assert len(stations) > 0
+    assert hasattr(stations[0], "libelle_station")
+
+
+def test_simple_client_observations_by_station_mocked(httpx_mock: HTTPXMock) -> None:
+    httpx_mock.add_response(
+        url=re.compile(r".*/api/v2/hydrometrie/observations_tr.*"),
+        json={"count": 1, "data": [MINIMAL_OBSERVATION_TR]},
+        status_code=200,
+    )
+    client = SimpleHydrometrieClient()
+    obs = client.get_observations_by_station("Y120201001", size=1)
+    assert len(obs) > 0
+    assert hasattr(obs[0], "date_obs")
+
+
+def test_simple_client_observations_elab_by_station_mocked(
+    httpx_mock: HTTPXMock,
+) -> None:
+    httpx_mock.add_response(
+        url=re.compile(r".*/api/v2/hydrometrie/obs_elab.*"),
+        json={"count": 1, "data": [MINIMAL_OBS_ELAB]},
+        status_code=200,
+    )
+    client = SimpleHydrometrieClient()
+    obs = client.get_observations_elab_by_station("Y390001001", size=1)
+    assert len(obs) > 0
+    assert hasattr(obs[0], "date_obs_elab")
+
+
+# ==============================================================================
+# 2. LIVE INTEGRATION TESTS (Real network calls, marked as 'live')
+# ==============================================================================
 
 
 @pytest.mark.live
 def test_station_model_validation() -> None:
-    url = "https://hubeau.eaufrance.fr/api/v2/hydrometrie/referentiel/stations"
-    params: dict[str, str | int] = {"code_commune_station": "75056", "size": 1}
-    resp = httpx.get(url, params=params)
-    resp.raise_for_status()
-    data = resp.json()["data"]
-    for item in data:
-        Station(**item)
+    from hubeau_data.api.hydrometrie import HydrometrieAPI
+    from hubeau_data.models.hydrometrie import StationParams
+
+    api = HydrometrieAPI()
+    stations = api.get_stations(
+        params=StationParams(code_commune_station="75056", size=1)
+    )
+    for s in stations:
+        assert isinstance(s, Station)
 
 
 @pytest.mark.live
 def test_site_model_validation() -> None:
-    url = "https://hubeau.eaufrance.fr/api/v2/hydrometrie/referentiel/sites"
-    params: dict[str, str | int] = {"code_departement": "95", "size": 1}
-    resp = httpx.get(url, params=params)
-    resp.raise_for_status()
-    data = resp.json()["data"]
-    for item in data:
-        Site(**item)
+    from hubeau_data.api.hydrometrie import HydrometrieAPI
+    from hubeau_data.models.hydrometrie import SiteParams
+
+    api = HydrometrieAPI()
+    sites = api.get_sites(params=SiteParams(code_departement=["95"], size=1))
+    for s in sites:
+        assert isinstance(s, Site)
 
 
 @pytest.mark.live
 def test_observation_tr_model_validation() -> None:
-    url = "https://hubeau.eaufrance.fr/api/v2/hydrometrie/observations_tr"
-    params: dict[str, str | int] = {"code_station": "Y120201001", "size": 1}
-    resp = httpx.get(url, params=params)
-    resp.raise_for_status()
-    data = resp.json()["data"]
-    for item in data:
-        ObservationTr(**item)
+    from hubeau_data.api.hydrometrie import HydrometrieAPI
+    from hubeau_data.models.hydrometrie import ObservationTrParams
+
+    api = HydrometrieAPI()
+    obs = api.get_observations_tr(
+        params=ObservationTrParams(code_station=["Y120201001"], size=1)
+    )
+    for o in obs:
+        assert isinstance(o, ObservationTr)
 
 
 @pytest.mark.live
 def test_obs_elab_model_validation() -> None:
-    url = "https://hubeau.eaufrance.fr/api/v2/hydrometrie/obs_elab"
-    params: dict[str, str | int] = {
-        "code_station": "Y390001001",  # Example: Rhône at Valence (often has data)
-        "grandeur_hydro_elab": "QmM",  # Débit moyen mensuel (valid value)
-        "size": 1,
-    }
-    resp = httpx.get(url, params=params)
-    resp.raise_for_status()
-    data = resp.json()["data"]
-    for item in data:
-        ObsElab(**item)
+    from hubeau_data.api.hydrometrie import HydrometrieAPI
+    from hubeau_data.models.hydrometrie import ObsElabParams
 
-
-simple_client = SimpleHydrometrieClient()
+    api = HydrometrieAPI()
+    obs = api.get_obs_elab(
+        params=ObsElabParams(
+            code_station=["Y390001001"], grandeur_hydro_elab="QmM", size=1
+        )
+    )
+    for o in obs:
+        assert isinstance(o, ObsElab)
 
 
 @pytest.mark.live
 def test_simple_client_sites_by_department() -> None:
-    sites = simple_client.get_sites_by_department("95", size=1)
+    sites = SimpleHydrometrieClient().get_sites_by_department("95", size=1)
     assert len(sites) > 0
     assert hasattr(sites[0], "libelle_site")
 
 
 @pytest.mark.live
 def test_simple_client_stations_by_commune() -> None:
-    stations = simple_client.get_stations_by_commune("75056", size=1)
+    stations = SimpleHydrometrieClient().get_stations_by_commune("75056", size=1)
     assert len(stations) > 0
     assert hasattr(stations[0], "libelle_station")
 
 
 @pytest.mark.live
 def test_simple_client_observations_by_station() -> None:
-    obs = simple_client.get_observations_by_station("Y120201001", size=1)
+    obs = SimpleHydrometrieClient().get_observations_by_station("Y120201001", size=1)
     assert len(obs) > 0
     assert hasattr(obs[0], "date_obs")
 
 
 @pytest.mark.live
 def test_simple_client_observations_elab_by_station() -> None:
-    obs = simple_client.get_observations_elab_by_station("Y390001001", size=1)
+    obs = SimpleHydrometrieClient().get_observations_elab_by_station(
+        "Y390001001", size=1
+    )
     assert len(obs) > 0
     assert hasattr(obs[0], "date_obs_elab")
