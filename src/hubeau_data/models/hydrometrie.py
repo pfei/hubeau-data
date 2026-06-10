@@ -5,31 +5,31 @@ from pydantic import BaseModel, ConfigDict, Field
 
 class Site(BaseModel):
     altitude_site: Optional[float] = None
-    code_commune_site: List[str]
-    code_cours_eau: str
-    code_departement: List[str]
-    code_entite_hydro_site: str
+    code_commune_site: Optional[List[str]] = None
+    code_cours_eau: Optional[str] = None
+    code_departement: Optional[List[str]] = None
+    code_entite_hydro_site: Optional[str] = None
     code_projection: int
-    code_region: List[str]
+    code_region: Optional[List[str]] = None
     code_site: str
     code_systeme_alti_site: Optional[int] = None
-    code_troncon_hydro_site: str
-    code_zone_hydro_site: str
+    code_troncon_hydro_site: Optional[str] = None
+    code_zone_hydro_site: Optional[str] = None
     commentaire_influence_generale_site: None = None
     commentaire_site: Optional[str] = None
     coordonnee_x_site: float
     coordonnee_y_site: float
-    date_maj_site: str
+    date_maj_site: Optional[str] = None
     date_premiere_donnee_dispo_site: None = None
     geometry: Dict[str, Any]
-    grandeur_hydro: str
+    grandeur_hydro: Optional[str] = None
     influence_generale_site: Optional[int] = None
     latitude_site: float
-    libelle_commune: List[str]
+    libelle_commune: Optional[List[str]] = None
     libelle_cours_eau: Optional[str] = None
-    libelle_departement: List[str]
-    libelle_region: List[str]
-    libelle_site: str
+    libelle_departement: Optional[List[str]] = None
+    libelle_region: Optional[List[str]] = None
+    libelle_site: Optional[str] = None
     longitude_site: float
     premier_mois_annee_hydro_site: int
     premier_mois_etiage_site: int
@@ -37,19 +37,19 @@ class Site(BaseModel):
     surface_bv: Optional[float] = None
     type_contexte_loi_stat_site: Optional[List[int]] = None
     type_loi_site: Optional[List[int]] = None
-    type_site: str
-    uri_cours_eau: str
+    type_site: Optional[str] = None
+    uri_cours_eau: Optional[str] = None
 
 
 class Station(BaseModel):
     altitude_ref_alti_station: Optional[float] = None
-    code_commune_station: str
-    code_cours_eau: str
-    code_departement: str
+    code_commune_station: Optional[str] = None
+    code_cours_eau: Optional[str] = None
+    code_departement: Optional[str] = None
     code_finalite_station: Optional[str] = None
     code_projection: int
     code_regime_station: int
-    code_region: str
+    code_region: Optional[str] = None
     code_sandre_reseau_station: Optional[List[Any]] = None
     code_site: str
     code_station: str
@@ -62,25 +62,25 @@ class Station(BaseModel):
     date_debut_ref_alti_station: Optional[str] = None
     date_fermeture_station: Optional[str] = None
     date_maj_ref_alti_station: Optional[str] = None
-    date_maj_station: str
-    date_ouverture_station: str
+    date_maj_station: Optional[str] = None
+    date_ouverture_station: Optional[str] = None
     descriptif_station: Optional[str] = None
     en_service: bool
     geometry: Optional[Dict[str, Any]] = None
     influence_locale_station: Optional[int] = None
     latitude_station: float
-    libelle_commune: str
+    libelle_commune: Optional[str] = None
     libelle_cours_eau: Optional[str] = None
-    libelle_departement: str
-    libelle_region: str
-    libelle_site: str
-    libelle_station: str
+    libelle_departement: Optional[str] = None
+    libelle_region: Optional[str] = None
+    libelle_site: Optional[str] = None
+    libelle_station: Optional[str] = None
     longitude_station: float
     qualification_donnees_station: int
     type_contexte_loi_stat_station: Optional[Union[int, str]] = None
     type_loi_station: Optional[Union[int, str]] = None
-    type_station: str
-    uri_cours_eau: str
+    type_station: Optional[str] = None
+    uri_cours_eau: Optional[str] = None
 
 
 class ObservationTr(BaseModel):
