@@ -68,7 +68,7 @@ extend-include = ["*.ipynb"]
 select = ["E", "F", "I"]
 
 [tool.ruff.lint.per-file-ignores]
-"*.ipynb" = ["E501"]
+"*.ipynb" = ["E501", "I001"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["hubeau_data"]
@@ -79,3 +79,4 @@ strict = true
 ignore_missing_imports = true
 mypy_path = "src"
 plugins = ["pydantic.mypy"]
+
