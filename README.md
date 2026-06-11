@@ -24,7 +24,6 @@ client = HubeauClient()
 # Hydrométrie — real-time observations
 params = ObservationTrParams(code_station=["Y120201001"], size=3)
 observations = client.hydrometrie.get_observations_tr(params=params)
-# → List[ObservationTr] — fully typed Pydantic models
 print(observations[0].date_obs, observations[0].resultat_obs)
 
 # Qualité Rivières — water quality stations
@@ -33,38 +32,55 @@ stations = client.qualite_rivieres.get_stations(
 )
 print(stations[0].code_station, stations[0].libelle_station)
 
-# API health check
+# Eau potable — drinking water analyses for a commune
+from hubeau_data.models.eau_potable import ResultatEauPotableParams
+resultats = client.eau_potable.get_resultats_dis(
+    params=ResultatEauPotableParams(code_commune=["75056"], size=5)
+)
+print(resultats[0].libelle_parametre, resultats[0].resultat_numerique)
+
+# Phytopharmaceutiques — national pesticide sales
+from hubeau_data.models.phytopharmaceutiques import VenteSubstanceParams
+ventes = client.phytopharmaceutiques.get_ventes_substances(
+    params=VenteSubstanceParams(type_territoire="National", size=5)
+)
+print(ventes[0].libelle_substance, ventes[0].quantite, ventes[0].annee)
+
+# API health check — works on every API
 report = client.hydrometrie.check_health(n_requests=3)
 print(report.summary())
-# [hydrometrie] checked at 2026-06-10T09:24:07+00:00
-#   healthy: 100% (4/4 endpoints)
-#   ✓ referentiel/sites      avg=102ms min=68ms max=136ms
-#   ✓ observations_tr        avg=376ms min=373ms max=379ms
-#   ...
 
-# Data coverage — spot-check a station
+# Data coverage — spot-check stations
 cov = client.hydrometrie.data_coverage(code_station="Y120201001")
 print(cov.summary())
-# [hydrometrie] coverage checked at ...
-#   ✓ Y120201001 / observations_tr  count=38156646 latest=2026-06-10T09:15:00Z
-#   ✓ Y120201001 / obs_elab         count=271407658 latest=2012-12-01
 ```
 
 ## API Coverage
 
 | API | Status | Notes |
 |-----|--------|-------|
-| **Hydrométrie** | ✅ Supported | Sites, stations, real-time and elaborated observations. `check_health` and `data_coverage` built-in. |
-| **Qualité Rivières** | ⚠️ Partial | Stations and analyses supported. Upstream API has known stability issues — `check_health()` will show it. |
-| **Other Hub'Eau APIs** | 📅 Planned | Piezometry, drinking water quality, flow conditions... |
+| **Hydrométrie** | ✅ Supported | Sites, stations, real-time and elaborated observations |
+| **Qualité des cours d'eau** | ⚠️ Partial | Stations and analyses. Upstream API has known stability issues |
+| **Piézométrie** | ✅ Supported | Stations, chroniques, chroniques temps réel |
+| **Qualité des nappes** | ⚠️ Partial | Stations and analyses. Known 503/timeout issues |
+| **Écoulement** | ✅ Supported | Stations, observations, campaigns |
+| **Température** | ✅ Supported | Stations and chroniques |
+| **Prélèvements en eau** | ✅ Supported | Ouvrages, points de prélèvement, chroniques |
+| **Hydrobiologie** | ✅ Supported | Stations, indices (IBGN/IBMR/IBD/IPR), taxons |
+| **Poisson** | ✅ Supported | Stations, indicateurs IPR/IPR+, observations, operations |
+| **Qualité eau potable** | ✅ Supported | Communes/UDI links, analysis results |
+| **Phytopharmaceutiques** | ✅ Supported | Purchases and sales by substance and product |
+| **Surveillance Littoral** | 🚫 Skipped | API being decommissioned by Hub'Eau |
+| **Indicateurs Services** | 🚧 Maintenance | API under maintenance — see services.eaufrance.fr |
+
+All supported APIs expose `check_health(n_requests)` and `data_coverage(...)`.
 
 ## Features
 
 - Pydantic v2 models for all responses — strict runtime validation, IDE autocomplete
 - Typed query `Params` models for every endpoint — no more `**kwargs`
 - `check_health(n_requests)` — latency stats per endpoint, healthy ratio
-- `data_coverage(code_station, n_stations, random)` — data availability windows
-- `HubeauClient` unified entry point + `SimpleHydrometrieClient` for common patterns
+- `data_coverage(...)` — data availability windows per station or territory
 - Optional extras: `[dataframe]`, `[geo]`, `[viz]` — install only what you need
 
 ## Stack
@@ -88,28 +104,31 @@ uv run pytest -m "not live"   # fast mocked tests (CI)
 uv run pytest -m "live" -s    # real network integration tests
 ```
 
-## Examples
+## Examples & Scripts
 
 ```zsh
 uv run python examples/demo.py
 uv run jupyter lab            # open examples/demo.ipynb
 ```
 
-Exploration and analysis scripts under `scripts/`:
+Health check scripts for every API under `scripts/<api>/check_health.py`:
 
-- `scripts/hydrometrie/inspect_fields.py` — inspect raw API fields, generate Pydantic templates
-- `scripts/qualite_rivieres/analyze_time_series.py` — time series coverage across stations
-- `scripts/qualite_rivieres/check_undocumented_fields.py` — model vs API field diff
-- `scripts/qualite_rivieres/inspect_models.py` — validate envelope and geometry models
+```zsh
+uv run python scripts/hydrometrie/check_health.py --n-requests 3 --random
+uv run python scripts/qualite_rivieres/check_health.py --n-requests 2
+uv run python scripts/eau_potable/check_health.py --commune 75056
+uv run python scripts/phytopharmaceutiques/check_health.py
+```
+
+Exploration scripts under `scripts/qualite_rivieres/` and `scripts/hydrometrie/`.
 
 ## Roadmap
 
-- [x] Typed `Params` models for all `hydrometrie` endpoints
-- [x] Typed `Params` models for all `qualite_rivieres` endpoints
-- [x] `check_health` and `data_coverage` on all implemented APIs
+- [x] Full Hub'Eau API coverage (11 APIs implemented)
+- [x] `check_health` and `data_coverage` on all APIs
+- [x] Typed `Params` models for every endpoint
 - [x] Optional dependency groups — `pandas`, `geopandas`, `matplotlib` as extras
 - [x] `CHANGELOG.md` + `CONTRIBUTING.md`
-- [ ] Full Hub'Eau API coverage (piezometry, drinking water, flow conditions...)
 - [ ] Async client (`httpx.AsyncClient`)
 - [ ] PyPI release
 
