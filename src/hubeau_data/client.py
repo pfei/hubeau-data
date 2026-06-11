@@ -1,3 +1,4 @@
+from hubeau_data.api.eau_potable import EauPotableAPI
 from hubeau_data.api.ecoulement import EcoulementAPI
 from hubeau_data.api.hydrobiologie import HydrobiologieAPI
 from hubeau_data.api.hydrometrie import HydrometrieAPI
@@ -24,3 +25,4 @@ class HubeauClient:
         self.prelevements = PrelevementsAPI()
         self.hydrobiologie = HydrobiologieAPI()
         self.poisson = PoissonAPI()
+        self.eau_potable = EauPotableAPI()
