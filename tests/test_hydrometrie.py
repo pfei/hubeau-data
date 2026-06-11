@@ -11,7 +11,7 @@ import re
 import pytest
 from pytest_httpx import HTTPXMock
 
-from hubeau_data.client import HubeauClient, SimpleHydrometrieClient
+from hubeau_data.client import HubeauClient
 from hubeau_data.models.hydrometrie import ObsElab, ObservationTr, Site, Station
 
 
@@ -39,6 +39,7 @@ MINIMAL_SITE = {
     "statut_site": 1,
     "geometry": {"type": "Point", "coordinates": [2.35, 48.85]},
 }
+
 MINIMAL_STATION = {
     "code_site": "A1234567",
     "code_station": "A123456701",
@@ -51,7 +52,6 @@ MINIMAL_STATION = {
     "longitude_station": 2.35,
     "qualification_donnees_station": 1,
 }
-
 
 MINIMAL_OBSERVATION_TR = {
     "code_station": "Y120201001",
@@ -69,7 +69,6 @@ MINIMAL_OBS_ELAB = {
 
 
 def test_get_sites_mocked(httpx_mock: HTTPXMock) -> None:
-    """Test get_sites using a mocked HTTP response."""
     httpx_mock.add_response(
         url=re.compile(r".*/api/v2/hydrometrie/referentiel/sites.*"),
         json={"count": 1, "data": [MINIMAL_SITE]},
@@ -84,7 +83,6 @@ def test_get_sites_mocked(httpx_mock: HTTPXMock) -> None:
 
 
 def test_get_stations_mocked(httpx_mock: HTTPXMock) -> None:
-    """Test get_stations using a mocked HTTP response."""
     httpx_mock.add_response(
         url=re.compile(r".*/api/v2/hydrometrie/referentiel/stations.*"),
         json={"count": 1, "data": [MINIMAL_STATION]},
@@ -99,7 +97,6 @@ def test_get_stations_mocked(httpx_mock: HTTPXMock) -> None:
 
 
 def test_get_observations_tr_mocked(httpx_mock: HTTPXMock) -> None:
-    """Test get_observations_tr using a mocked HTTP response."""
     httpx_mock.add_response(
         url=re.compile(r".*/api/v2/hydrometrie/observations_tr.*"),
         json={"count": 1, "data": [MINIMAL_OBSERVATION_TR]},
@@ -114,7 +111,6 @@ def test_get_observations_tr_mocked(httpx_mock: HTTPXMock) -> None:
 
 
 def test_get_obs_elab_mocked(httpx_mock: HTTPXMock) -> None:
-    """Test get_obs_elab using a mocked HTTP response."""
     httpx_mock.add_response(
         url=re.compile(r".*/api/v2/hydrometrie/obs_elab.*"),
         json={"count": 1, "data": [MINIMAL_OBS_ELAB]},
@@ -128,56 +124,6 @@ def test_get_obs_elab_mocked(httpx_mock: HTTPXMock) -> None:
     assert obs[0].grandeur_hydro_elab == "QmM"
 
 
-def test_simple_client_sites_by_department_mocked(httpx_mock: HTTPXMock) -> None:
-    httpx_mock.add_response(
-        url=re.compile(r".*/api/v2/hydrometrie/referentiel/sites.*"),
-        json={"count": 1, "data": [MINIMAL_SITE]},
-        status_code=200,
-    )
-    client = SimpleHydrometrieClient()
-    sites = client.get_sites_by_department("95", size=1)
-    assert len(sites) > 0
-    assert hasattr(sites[0], "libelle_site")
-
-
-def test_simple_client_stations_by_commune_mocked(httpx_mock: HTTPXMock) -> None:
-    httpx_mock.add_response(
-        url=re.compile(r".*/api/v2/hydrometrie/referentiel/stations.*"),
-        json={"count": 1, "data": [MINIMAL_STATION]},
-        status_code=200,
-    )
-    client = SimpleHydrometrieClient()
-    stations = client.get_stations_by_commune("75056", size=1)
-    assert len(stations) > 0
-    assert hasattr(stations[0], "libelle_station")
-
-
-def test_simple_client_observations_by_station_mocked(httpx_mock: HTTPXMock) -> None:
-    httpx_mock.add_response(
-        url=re.compile(r".*/api/v2/hydrometrie/observations_tr.*"),
-        json={"count": 1, "data": [MINIMAL_OBSERVATION_TR]},
-        status_code=200,
-    )
-    client = SimpleHydrometrieClient()
-    obs = client.get_observations_by_station("Y120201001", size=1)
-    assert len(obs) > 0
-    assert hasattr(obs[0], "date_obs")
-
-
-def test_simple_client_observations_elab_by_station_mocked(
-    httpx_mock: HTTPXMock,
-) -> None:
-    httpx_mock.add_response(
-        url=re.compile(r".*/api/v2/hydrometrie/obs_elab.*"),
-        json={"count": 1, "data": [MINIMAL_OBS_ELAB]},
-        status_code=200,
-    )
-    client = SimpleHydrometrieClient()
-    obs = client.get_observations_elab_by_station("Y390001001", size=1)
-    assert len(obs) > 0
-    assert hasattr(obs[0], "date_obs_elab")
-
-
 # ==============================================================================
 # 2. LIVE INTEGRATION TESTS (Real network calls, marked as 'live')
 # ==============================================================================
@@ -185,11 +131,9 @@ def test_simple_client_observations_elab_by_station_mocked(
 
 @pytest.mark.live
 def test_station_model_validation() -> None:
-    from hubeau_data.api.hydrometrie import HydrometrieAPI
     from hubeau_data.models.hydrometrie import StationParams
 
-    api = HydrometrieAPI()
-    stations = api.get_stations(
+    stations = HubeauClient().hydrometrie.get_stations(
         params=StationParams(code_commune_station="75056", size=1)
     )
     for s in stations:
@@ -198,22 +142,20 @@ def test_station_model_validation() -> None:
 
 @pytest.mark.live
 def test_site_model_validation() -> None:
-    from hubeau_data.api.hydrometrie import HydrometrieAPI
     from hubeau_data.models.hydrometrie import SiteParams
 
-    api = HydrometrieAPI()
-    sites = api.get_sites(params=SiteParams(code_departement=["95"], size=1))
+    sites = HubeauClient().hydrometrie.get_sites(
+        params=SiteParams(code_departement=["95"], size=1)
+    )
     for s in sites:
         assert isinstance(s, Site)
 
 
 @pytest.mark.live
 def test_observation_tr_model_validation() -> None:
-    from hubeau_data.api.hydrometrie import HydrometrieAPI
     from hubeau_data.models.hydrometrie import ObservationTrParams
 
-    api = HydrometrieAPI()
-    obs = api.get_observations_tr(
+    obs = HubeauClient().hydrometrie.get_observations_tr(
         params=ObservationTrParams(code_station=["Y120201001"], size=1)
     )
     for o in obs:
@@ -222,11 +164,9 @@ def test_observation_tr_model_validation() -> None:
 
 @pytest.mark.live
 def test_obs_elab_model_validation() -> None:
-    from hubeau_data.api.hydrometrie import HydrometrieAPI
     from hubeau_data.models.hydrometrie import ObsElabParams
 
-    api = HydrometrieAPI()
-    obs = api.get_obs_elab(
+    obs = HubeauClient().hydrometrie.get_obs_elab(
         params=ObsElabParams(
             code_station=["Y390001001"], grandeur_hydro_elab="QmM", size=1
         )
@@ -236,30 +176,44 @@ def test_obs_elab_model_validation() -> None:
 
 
 @pytest.mark.live
-def test_simple_client_sites_by_department() -> None:
-    sites = SimpleHydrometrieClient().get_sites_by_department("95", size=1)
+def test_get_sites_by_department_live() -> None:
+    from hubeau_data.models.hydrometrie import SiteParams
+
+    sites = HubeauClient().hydrometrie.get_sites(
+        params=SiteParams(code_departement=["95"], size=1)
+    )
     assert len(sites) > 0
     assert hasattr(sites[0], "libelle_site")
 
 
 @pytest.mark.live
-def test_simple_client_stations_by_commune() -> None:
-    stations = SimpleHydrometrieClient().get_stations_by_commune("75056", size=1)
+def test_get_stations_by_commune_live() -> None:
+    from hubeau_data.models.hydrometrie import StationParams
+
+    stations = HubeauClient().hydrometrie.get_stations(
+        params=StationParams(code_commune_station="75056", size=1)
+    )
     assert len(stations) > 0
     assert hasattr(stations[0], "libelle_station")
 
 
 @pytest.mark.live
-def test_simple_client_observations_by_station() -> None:
-    obs = SimpleHydrometrieClient().get_observations_by_station("Y120201001", size=1)
+def test_get_observations_by_station_live() -> None:
+    from hubeau_data.models.hydrometrie import ObservationTrParams
+
+    obs = HubeauClient().hydrometrie.get_observations_tr(
+        params=ObservationTrParams(code_station=["Y120201001"], size=1)
+    )
     assert len(obs) > 0
     assert hasattr(obs[0], "date_obs")
 
 
 @pytest.mark.live
-def test_simple_client_observations_elab_by_station() -> None:
-    obs = SimpleHydrometrieClient().get_observations_elab_by_station(
-        "Y390001001", size=1
+def test_get_obs_elab_by_station_live() -> None:
+    from hubeau_data.models.hydrometrie import ObsElabParams
+
+    obs = HubeauClient().hydrometrie.get_obs_elab(
+        params=ObsElabParams(code_station=["Y390001001"], size=1)
     )
     assert len(obs) > 0
     assert hasattr(obs[0], "date_obs_elab")
