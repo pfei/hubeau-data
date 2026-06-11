@@ -2,6 +2,7 @@ from hubeau_data.api.ecoulement import EcoulementAPI
 from hubeau_data.api.hydrobiologie import HydrobiologieAPI
 from hubeau_data.api.hydrometrie import HydrometrieAPI
 from hubeau_data.api.piezometrie import PiezometrieAPI
+from hubeau_data.api.poisson import PoissonAPI
 from hubeau_data.api.prelevements import PrelevementsAPI
 from hubeau_data.api.qualite_nappes import QualiteNappesAPI
 from hubeau_data.api.qualite_rivieres import QualiteRivieresAPI
@@ -22,3 +23,4 @@ class HubeauClient:
         self.temperature = TemperatureAPI()
         self.prelevements = PrelevementsAPI()
         self.hydrobiologie = HydrobiologieAPI()
+        self.poisson = PoissonAPI()
