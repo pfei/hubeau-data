@@ -5,6 +5,7 @@ from typing import List, Optional
 
 import httpx
 
+from hubeau_data.base import HubeauBaseAPI
 from hubeau_data.models.health import (
     CoverageReport,
     DataWindow,
@@ -21,7 +22,7 @@ from hubeau_data.models.prelevements import (
 )
 
 
-class PrelevementsAPI:
+class PrelevementsAPI(HubeauBaseAPI):
     BASE_URL = "https://hubeau.eaufrance.fr/api/v1/prelevements"
 
     _HEALTH_ENDPOINTS = [
@@ -33,42 +34,36 @@ class PrelevementsAPI:
     def get_ouvrages(
         self, params: Optional[OuvrageParams] = None
     ) -> List[OuvragePrelevement]:
-        """Fetch water withdrawal structures."""
-        url = f"{self.BASE_URL}/referentiel/ouvrages"
-        query_params = params.model_dump(exclude_none=True) if params else {}
-        resp = httpx.get(url, params=query_params, timeout=30)
-        resp.raise_for_status()
+        resp = self._get(
+            f"{self.BASE_URL}/referentiel/ouvrages",
+            params.model_dump(exclude_none=True) if params else None,
+        )
         return [OuvragePrelevement(**item) for item in resp.json().get("data", [])]
 
     def get_points_prelevement(
         self, params: Optional[PointPrelevementParams] = None
     ) -> List[PointPrelevement]:
-        """Fetch water withdrawal points."""
-        url = f"{self.BASE_URL}/referentiel/points_prelevement"
-        query_params = params.model_dump(exclude_none=True) if params else {}
-        resp = httpx.get(url, params=query_params, timeout=30)
-        resp.raise_for_status()
+        resp = self._get(
+            f"{self.BASE_URL}/referentiel/points_prelevement",
+            params.model_dump(exclude_none=True) if params else None,
+        )
         return [PointPrelevement(**item) for item in resp.json().get("data", [])]
 
     def get_chroniques(
         self, params: Optional[ChroniquePrelevementParams] = None
     ) -> List[ChroniquePrelevement]:
-        """Fetch annual water withdrawal volumes."""
-        url = f"{self.BASE_URL}/chroniques"
-        query_params = params.model_dump(exclude_none=True) if params else {}
-        resp = httpx.get(url, params=query_params, timeout=30)
-        resp.raise_for_status()
+        resp = self._get(
+            f"{self.BASE_URL}/chroniques",
+            params.model_dump(exclude_none=True) if params else None,
+        )
         return [ChroniquePrelevement(**item) for item in resp.json().get("data", [])]
 
     def check_health(self, n_requests: int = 3) -> HealthReport:
-        """Probe all endpoints N times and return latency stats."""
         statuses: List[EndpointStatus] = []
-
         for endpoint, probe_params in self._HEALTH_ENDPOINTS:
             url = f"{self.BASE_URL}/{endpoint}"
             latencies: List[float] = []
             error: Optional[str] = None
-
             for _ in range(n_requests):
                 try:
                     t0 = time.perf_counter()
@@ -78,7 +73,6 @@ class PrelevementsAPI:
                 except Exception as e:
                     error = type(e).__name__
                     break
-
             if latencies and error is None:
                 statuses.append(
                     EndpointStatus(
@@ -91,13 +85,8 @@ class PrelevementsAPI:
                 )
             else:
                 statuses.append(
-                    EndpointStatus(
-                        name=endpoint,
-                        ok=False,
-                        error=error or "unknown",
-                    )
+                    EndpointStatus(name=endpoint, ok=False, error=error or "unknown")
                 )
-
         ok_count = sum(s.ok for s in statuses)
         return HealthReport(
             api="prelevements",
@@ -113,9 +102,7 @@ class PrelevementsAPI:
         n_ouvrages: int = 3,
         random: bool = False,
     ) -> CoverageReport:
-        """Check data availability for one structure or a sample."""
         checked_at = datetime.now(timezone.utc)
-
         if code_ouvrage is not None:
             ouvrage_codes = [code_ouvrage]
             random_sample = False
@@ -129,9 +116,7 @@ class PrelevementsAPI:
                 ouvrages = ouvrages[:n_ouvrages]
             ouvrage_codes = [o.code_ouvrage for o in ouvrages if o.code_ouvrage]
             random_sample = random
-
         windows: List[DataWindow] = []
-
         for code in ouvrage_codes:
             try:
                 resp = httpx.get(
@@ -142,13 +127,12 @@ class PrelevementsAPI:
                 resp.raise_for_status()
                 body = resp.json()
                 data = body.get("data", [])
-                latest = str(data[0].get("annee")) if data else None
                 windows.append(
                     DataWindow(
                         station_code=code,
                         endpoint="chroniques",
                         count=body.get("count"),
-                        latest=latest,
+                        latest=str(data[0].get("annee")) if data else None,
                     )
                 )
             except Exception as e:
@@ -159,7 +143,6 @@ class PrelevementsAPI:
                         error=type(e).__name__,
                     )
                 )
-
         return CoverageReport(
             api="prelevements",
             checked_at=checked_at,

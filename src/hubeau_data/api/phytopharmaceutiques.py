@@ -4,6 +4,7 @@ from typing import List, Optional
 
 import httpx
 
+from hubeau_data.base import HubeauBaseAPI
 from hubeau_data.models.health import (
     CoverageReport,
     DataWindow,
@@ -21,9 +22,12 @@ from hubeau_data.models.phytopharmaceutiques import (
     VenteSubstanceParams,
 )
 
+_DEFAULT_PARAMS = {"type_territoire": "National"}
 
-class PhytopharmaceutiquesAPI:
+
+class PhytopharmaceutiquesAPI(HubeauBaseAPI):
     BASE_URL = "https://hubeau.eaufrance.fr/api/v1/vente_achat_phyto"
+
     _HEALTH_ENDPOINTS: list[tuple[str, dict[str, str | int]]] = [
         ("achats/substances", {"size": 1, "type_territoire": "National"}),
         ("achats/produits", {"size": 1, "type_territoire": "National"}),
@@ -34,68 +38,45 @@ class PhytopharmaceutiquesAPI:
     def get_achats_substances(
         self, params: Optional[AchatSubstanceParams] = None
     ) -> List[AchatSubstance]:
-        """Fetch pesticide substance purchase data."""
-        url = f"{self.BASE_URL}/achats/substances"
-        query_params = (
-            params.model_dump(exclude_none=True)
-            if params
-            else {"type_territoire": "National"}
+        resp = self._get(
+            f"{self.BASE_URL}/achats/substances",
+            params.model_dump(exclude_none=True) if params else _DEFAULT_PARAMS,
         )
-        resp = httpx.get(url, params=query_params, timeout=30)
-        resp.raise_for_status()
         return [AchatSubstance(**item) for item in resp.json().get("data", [])]
 
     def get_achats_produits(
         self, params: Optional[AchatProduitParams] = None
     ) -> List[AchatProduit]:
-        """Fetch pesticide product purchase data."""
-        url = f"{self.BASE_URL}/achats/produits"
-        query_params = (
-            params.model_dump(exclude_none=True)
-            if params
-            else {"type_territoire": "National"}
+        resp = self._get(
+            f"{self.BASE_URL}/achats/produits",
+            params.model_dump(exclude_none=True) if params else _DEFAULT_PARAMS,
         )
-        resp = httpx.get(url, params=query_params, timeout=30)
-        resp.raise_for_status()
         return [AchatProduit(**item) for item in resp.json().get("data", [])]
 
     def get_ventes_substances(
         self, params: Optional[VenteSubstanceParams] = None
     ) -> List[VenteSubstance]:
-        """Fetch pesticide substance sales data."""
-        url = f"{self.BASE_URL}/ventes/substances"
-        query_params = (
-            params.model_dump(exclude_none=True)
-            if params
-            else {"type_territoire": "National"}
+        resp = self._get(
+            f"{self.BASE_URL}/ventes/substances",
+            params.model_dump(exclude_none=True) if params else _DEFAULT_PARAMS,
         )
-        resp = httpx.get(url, params=query_params, timeout=30)
-        resp.raise_for_status()
         return [VenteSubstance(**item) for item in resp.json().get("data", [])]
 
     def get_ventes_produits(
         self, params: Optional[VenteProduitParams] = None
     ) -> List[VenteProduit]:
-        """Fetch pesticide product sales data."""
-        url = f"{self.BASE_URL}/ventes/produits"
-        query_params = (
-            params.model_dump(exclude_none=True)
-            if params
-            else {"type_territoire": "National"}
+        resp = self._get(
+            f"{self.BASE_URL}/ventes/produits",
+            params.model_dump(exclude_none=True) if params else _DEFAULT_PARAMS,
         )
-        resp = httpx.get(url, params=query_params, timeout=30)
-        resp.raise_for_status()
         return [VenteProduit(**item) for item in resp.json().get("data", [])]
 
     def check_health(self, n_requests: int = 3) -> HealthReport:
-        """Probe all endpoints N times and return latency stats."""
         statuses: List[EndpointStatus] = []
-
         for endpoint, probe_params in self._HEALTH_ENDPOINTS:
             url = f"{self.BASE_URL}/{endpoint}"
             latencies: List[float] = []
             error: Optional[str] = None
-
             for _ in range(n_requests):
                 try:
                     t0 = time.perf_counter()
@@ -105,7 +86,6 @@ class PhytopharmaceutiquesAPI:
                 except Exception as e:
                     error = type(e).__name__
                     break
-
             if latencies and error is None:
                 statuses.append(
                     EndpointStatus(
@@ -118,13 +98,8 @@ class PhytopharmaceutiquesAPI:
                 )
             else:
                 statuses.append(
-                    EndpointStatus(
-                        name=endpoint,
-                        ok=False,
-                        error=error or "unknown",
-                    )
+                    EndpointStatus(name=endpoint, ok=False, error=error or "unknown")
                 )
-
         ok_count = sum(s.ok for s in statuses)
         return HealthReport(
             api="phytopharmaceutiques",
@@ -135,10 +110,8 @@ class PhytopharmaceutiquesAPI:
         )
 
     def data_coverage(self) -> CoverageReport:
-        """Check latest available year for national substance sales."""
         checked_at = datetime.now(timezone.utc)
         windows: List[DataWindow] = []
-
         for endpoint in ["ventes/substances", "achats/substances"]:
             try:
                 resp = httpx.get(
@@ -149,13 +122,12 @@ class PhytopharmaceutiquesAPI:
                 resp.raise_for_status()
                 body = resp.json()
                 data = body.get("data", [])
-                latest = str(data[0].get("annee")) if data else None
                 windows.append(
                     DataWindow(
                         station_code="National",
                         endpoint=endpoint,
                         count=body.get("count"),
-                        latest=latest,
+                        latest=str(data[0].get("annee")) if data else None,
                     )
                 )
             except Exception as e:
@@ -166,7 +138,6 @@ class PhytopharmaceutiquesAPI:
                         error=type(e).__name__,
                     )
                 )
-
         return CoverageReport(
             api="phytopharmaceutiques",
             checked_at=checked_at,

@@ -5,6 +5,7 @@ from typing import List, Optional
 
 import httpx
 
+from hubeau_data.base import HubeauBaseAPI
 from hubeau_data.models.health import (
     CoverageReport,
     DataWindow,
@@ -23,11 +24,10 @@ from hubeau_data.models.hydrometrie import (
 )
 
 
-class HydrometrieAPI:
+class HydrometrieAPI(HubeauBaseAPI):
     BASE_URL = "https://hubeau.eaufrance.fr/api/v2/hydrometrie"
 
-    # Endpoints to probe for health checks
-    _HEALTH_ENDPOINTS = [
+    _HEALTH_ENDPOINTS: list[tuple[str, dict[str, str | int]]] = [
         ("referentiel/sites", {"size": 1}),
         ("referentiel/stations", {"size": 1}),
         ("observations_tr", {"size": 1}),
@@ -35,39 +35,38 @@ class HydrometrieAPI:
     ]
 
     def get_sites(self, params: Optional[SiteParams] = None) -> List[Site]:
-        url = f"{self.BASE_URL}/referentiel/sites"
-        query_params = params.model_dump(exclude_none=True) if params else {}
-        resp = httpx.get(url, params=query_params)
-        resp.raise_for_status()
+        resp = self._get(
+            f"{self.BASE_URL}/referentiel/sites",
+            params.model_dump(exclude_none=True) if params else None,
+        )
         return [Site(**item) for item in resp.json()["data"]]
 
     def get_stations(self, params: Optional[StationParams] = None) -> List[Station]:
-        url = f"{self.BASE_URL}/referentiel/stations"
-        query_params = params.model_dump(exclude_none=True) if params else {}
-        resp = httpx.get(url, params=query_params)
-        resp.raise_for_status()
+        resp = self._get(
+            f"{self.BASE_URL}/referentiel/stations",
+            params.model_dump(exclude_none=True) if params else None,
+        )
         return [Station(**item) for item in resp.json()["data"]]
 
     def get_observations_tr(
         self, params: Optional[ObservationTrParams] = None
     ) -> List[ObservationTr]:
-        url = f"{self.BASE_URL}/observations_tr"
-        query_params = params.model_dump(exclude_none=True) if params else {}
-        resp = httpx.get(url, params=query_params)
-        resp.raise_for_status()
+        resp = self._get(
+            f"{self.BASE_URL}/observations_tr",
+            params.model_dump(exclude_none=True) if params else None,
+        )
         return [ObservationTr(**item) for item in resp.json()["data"]]
 
     def get_obs_elab(self, params: Optional[ObsElabParams] = None) -> List[ObsElab]:
-        url = f"{self.BASE_URL}/obs_elab"
-        query_params = params.model_dump(exclude_none=True) if params else {}
-        resp = httpx.get(url, params=query_params)
-        resp.raise_for_status()
+        resp = self._get(
+            f"{self.BASE_URL}/obs_elab",
+            params.model_dump(exclude_none=True) if params else None,
+        )
         return [ObsElab(**item) for item in resp.json()["data"]]
 
-    # --- Health & Coverage ---
+    # --- Health & Coverage — pas de retry : on mesure les erreurs ---
 
     def check_health(self, n_requests: int = 3) -> HealthReport:
-        """Probe all endpoints N times and return latency stats."""
         statuses: List[EndpointStatus] = []
 
         for endpoint, probe_params in self._HEALTH_ENDPOINTS:
@@ -119,7 +118,6 @@ class HydrometrieAPI:
         n_stations: int = 3,
         random: bool = False,
     ) -> CoverageReport:
-        """Check data availability for one station or a sample of stations."""
         checked_at = datetime.now(timezone.utc)
 
         if code_station is not None:
@@ -139,59 +137,35 @@ class HydrometrieAPI:
         windows: List[DataWindow] = []
 
         for code in station_codes:
-            # observations_tr
-            try:
-                resp = httpx.get(
-                    f"{self.BASE_URL}/observations_tr",
-                    params={"code_station": code, "size": 1, "sort": "desc"},
-                    timeout=10,
-                )
-                resp.raise_for_status()
-                body = resp.json()
-                data = body.get("data", [])
-                windows.append(
-                    DataWindow(
-                        station_code=code,
-                        endpoint="observations_tr",
-                        count=body.get("count"),
-                        latest=data[0].get("date_obs") if data else None,
+            for endpoint, date_field in [
+                ("observations_tr", "date_obs"),
+                ("obs_elab", "date_obs_elab"),
+            ]:
+                try:
+                    resp = httpx.get(
+                        f"{self.BASE_URL}/{endpoint}",
+                        params={"code_station": code, "size": 1, "sort": "desc"},
+                        timeout=10,
                     )
-                )
-            except Exception as e:
-                windows.append(
-                    DataWindow(
-                        station_code=code,
-                        endpoint="observations_tr",
-                        error=type(e).__name__,
+                    resp.raise_for_status()
+                    body = resp.json()
+                    data = body.get("data", [])
+                    windows.append(
+                        DataWindow(
+                            station_code=code,
+                            endpoint=endpoint,
+                            count=body.get("count"),
+                            latest=data[0].get(date_field) if data else None,
+                        )
                     )
-                )
-
-            # obs_elab
-            try:
-                resp = httpx.get(
-                    f"{self.BASE_URL}/obs_elab",
-                    params={"code_station": code, "size": 1, "sort": "desc"},
-                    timeout=10,
-                )
-                resp.raise_for_status()
-                body = resp.json()
-                data = body.get("data", [])
-                windows.append(
-                    DataWindow(
-                        station_code=code,
-                        endpoint="obs_elab",
-                        count=body.get("count"),
-                        latest=data[0].get("date_obs_elab") if data else None,
+                except Exception as e:
+                    windows.append(
+                        DataWindow(
+                            station_code=code,
+                            endpoint=endpoint,
+                            error=type(e).__name__,
+                        )
                     )
-                )
-            except Exception as e:
-                windows.append(
-                    DataWindow(
-                        station_code=code,
-                        endpoint="obs_elab",
-                        error=type(e).__name__,
-                    )
-                )
 
         return CoverageReport(
             api="hydrometrie",

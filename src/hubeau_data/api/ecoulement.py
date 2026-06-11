@@ -5,6 +5,7 @@ from typing import List, Optional
 
 import httpx
 
+from hubeau_data.base import HubeauBaseAPI
 from hubeau_data.models.ecoulement import (
     CampagneEcoulement,
     CampagneEcoulementParams,
@@ -21,7 +22,7 @@ from hubeau_data.models.health import (
 )
 
 
-class EcoulementAPI:
+class EcoulementAPI(HubeauBaseAPI):
     BASE_URL = "https://hubeau.eaufrance.fr/api/v1/ecoulement"
 
     _HEALTH_ENDPOINTS = [
@@ -33,42 +34,36 @@ class EcoulementAPI:
     def get_stations(
         self, params: Optional[StationEcoulementParams] = None
     ) -> List[StationEcoulement]:
-        """Fetch flow monitoring stations."""
-        url = f"{self.BASE_URL}/stations"
-        query_params = params.model_dump(exclude_none=True) if params else {}
-        resp = httpx.get(url, params=query_params, timeout=30)
-        resp.raise_for_status()
+        resp = self._get(
+            f"{self.BASE_URL}/stations",
+            params.model_dump(exclude_none=True) if params else None,
+        )
         return [StationEcoulement(**item) for item in resp.json().get("data", [])]
 
     def get_observations(
         self, params: Optional[ObservationEcoulementParams] = None
     ) -> List[ObservationEcoulement]:
-        """Fetch flow observations."""
-        url = f"{self.BASE_URL}/observations"
-        query_params = params.model_dump(exclude_none=True) if params else {}
-        resp = httpx.get(url, params=query_params, timeout=30)
-        resp.raise_for_status()
+        resp = self._get(
+            f"{self.BASE_URL}/observations",
+            params.model_dump(exclude_none=True) if params else None,
+        )
         return [ObservationEcoulement(**item) for item in resp.json().get("data", [])]
 
     def get_campagnes(
         self, params: Optional[CampagneEcoulementParams] = None
     ) -> List[CampagneEcoulement]:
-        """Fetch observation campaigns."""
-        url = f"{self.BASE_URL}/campagnes"
-        query_params = params.model_dump(exclude_none=True) if params else {}
-        resp = httpx.get(url, params=query_params, timeout=30)
-        resp.raise_for_status()
+        resp = self._get(
+            f"{self.BASE_URL}/campagnes",
+            params.model_dump(exclude_none=True) if params else None,
+        )
         return [CampagneEcoulement(**item) for item in resp.json().get("data", [])]
 
     def check_health(self, n_requests: int = 3) -> HealthReport:
-        """Probe all endpoints N times and return latency stats."""
         statuses: List[EndpointStatus] = []
-
         for endpoint, probe_params in self._HEALTH_ENDPOINTS:
             url = f"{self.BASE_URL}/{endpoint}"
             latencies: List[float] = []
             error: Optional[str] = None
-
             for _ in range(n_requests):
                 try:
                     t0 = time.perf_counter()
@@ -78,7 +73,6 @@ class EcoulementAPI:
                 except Exception as e:
                     error = type(e).__name__
                     break
-
             if latencies and error is None:
                 statuses.append(
                     EndpointStatus(
@@ -91,13 +85,8 @@ class EcoulementAPI:
                 )
             else:
                 statuses.append(
-                    EndpointStatus(
-                        name=endpoint,
-                        ok=False,
-                        error=error or "unknown",
-                    )
+                    EndpointStatus(name=endpoint, ok=False, error=error or "unknown")
                 )
-
         ok_count = sum(s.ok for s in statuses)
         return HealthReport(
             api="ecoulement",
@@ -113,9 +102,7 @@ class EcoulementAPI:
         n_stations: int = 3,
         random: bool = False,
     ) -> CoverageReport:
-        """Check data availability for one station or a sample of stations."""
         checked_at = datetime.now(timezone.utc)
-
         if code_station is not None:
             station_codes = [code_station]
             random_sample = False
@@ -129,9 +116,7 @@ class EcoulementAPI:
                 stations = stations[:n_stations]
             station_codes = [s.code_station for s in stations if s.code_station]
             random_sample = random
-
         windows: List[DataWindow] = []
-
         for code in station_codes:
             try:
                 resp = httpx.get(
@@ -158,7 +143,6 @@ class EcoulementAPI:
                         error=type(e).__name__,
                     )
                 )
-
         return CoverageReport(
             api="ecoulement",
             checked_at=checked_at,

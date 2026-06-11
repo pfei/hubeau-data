@@ -5,6 +5,7 @@ from typing import List, Optional
 
 import httpx
 
+from hubeau_data.base import HubeauBaseAPI
 from hubeau_data.models.health import (
     CoverageReport,
     DataWindow,
@@ -23,7 +24,7 @@ from hubeau_data.models.poisson import (
 )
 
 
-class PoissonAPI:
+class PoissonAPI(HubeauBaseAPI):
     BASE_URL = "https://hubeau.eaufrance.fr/api/v1/etat_piscicole"
 
     _HEALTH_ENDPOINTS = [
@@ -36,52 +37,45 @@ class PoissonAPI:
     def get_stations(
         self, params: Optional[StationPoissonParams] = None
     ) -> List[StationPoisson]:
-        """Fetch fish monitoring stations."""
-        url = f"{self.BASE_URL}/stations"
-        query_params = params.model_dump(exclude_none=True) if params else {}
-        resp = httpx.get(url, params=query_params, timeout=30)
-        resp.raise_for_status()
+        resp = self._get(
+            f"{self.BASE_URL}/stations",
+            params.model_dump(exclude_none=True) if params else None,
+        )
         return [StationPoisson(**item) for item in resp.json().get("data", [])]
 
     def get_indicateurs(
         self, params: Optional[IndicateurPoissonParams] = None
     ) -> List[IndicateurPoisson]:
-        """Fetch fish ecological indicators (IPR, IPR+)."""
-        url = f"{self.BASE_URL}/indicateurs"
-        query_params = params.model_dump(exclude_none=True) if params else {}
-        resp = httpx.get(url, params=query_params, timeout=30)
-        resp.raise_for_status()
+        resp = self._get(
+            f"{self.BASE_URL}/indicateurs",
+            params.model_dump(exclude_none=True) if params else None,
+        )
         return [IndicateurPoisson(**item) for item in resp.json().get("data", [])]
 
     def get_observations(
         self, params: Optional[ObservationPoissonParams] = None
     ) -> List[ObservationPoisson]:
-        """Fetch fish observations (taxon, size, weight...)."""
-        url = f"{self.BASE_URL}/observations"
-        query_params = params.model_dump(exclude_none=True) if params else {}
-        resp = httpx.get(url, params=query_params, timeout=30)
-        resp.raise_for_status()
+        resp = self._get(
+            f"{self.BASE_URL}/observations",
+            params.model_dump(exclude_none=True) if params else None,
+        )
         return [ObservationPoisson(**item) for item in resp.json().get("data", [])]
 
     def get_operations(
         self, params: Optional[OperationPoissonParams] = None
     ) -> List[OperationPoisson]:
-        """Fetch electrofishing operations."""
-        url = f"{self.BASE_URL}/operations"
-        query_params = params.model_dump(exclude_none=True) if params else {}
-        resp = httpx.get(url, params=query_params, timeout=30)
-        resp.raise_for_status()
+        resp = self._get(
+            f"{self.BASE_URL}/operations",
+            params.model_dump(exclude_none=True) if params else None,
+        )
         return [OperationPoisson(**item) for item in resp.json().get("data", [])]
 
     def check_health(self, n_requests: int = 3) -> HealthReport:
-        """Probe all endpoints N times and return latency stats."""
         statuses: List[EndpointStatus] = []
-
         for endpoint, probe_params in self._HEALTH_ENDPOINTS:
             url = f"{self.BASE_URL}/{endpoint}"
             latencies: List[float] = []
             error: Optional[str] = None
-
             for _ in range(n_requests):
                 try:
                     t0 = time.perf_counter()
@@ -91,7 +85,6 @@ class PoissonAPI:
                 except Exception as e:
                     error = type(e).__name__
                     break
-
             if latencies and error is None:
                 statuses.append(
                     EndpointStatus(
@@ -104,13 +97,8 @@ class PoissonAPI:
                 )
             else:
                 statuses.append(
-                    EndpointStatus(
-                        name=endpoint,
-                        ok=False,
-                        error=error or "unknown",
-                    )
+                    EndpointStatus(name=endpoint, ok=False, error=error or "unknown")
                 )
-
         ok_count = sum(s.ok for s in statuses)
         return HealthReport(
             api="poisson",
@@ -126,9 +114,7 @@ class PoissonAPI:
         n_stations: int = 3,
         random: bool = False,
     ) -> CoverageReport:
-        """Check data availability for one station or a sample of stations."""
         checked_at = datetime.now(timezone.utc)
-
         if code_station is not None:
             station_codes = [code_station]
             random_sample = False
@@ -142,9 +128,7 @@ class PoissonAPI:
                 stations = stations[:n_stations]
             station_codes = [s.code_station for s in stations if s.code_station]
             random_sample = random
-
         windows: List[DataWindow] = []
-
         for code in station_codes:
             try:
                 resp = httpx.get(
@@ -171,7 +155,6 @@ class PoissonAPI:
                         error=type(e).__name__,
                     )
                 )
-
         return CoverageReport(
             api="poisson",
             checked_at=checked_at,

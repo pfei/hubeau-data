@@ -5,6 +5,7 @@ from typing import List, Optional
 
 import httpx
 
+from hubeau_data.base import HubeauBaseAPI
 from hubeau_data.models.health import (
     CoverageReport,
     DataWindow,
@@ -19,7 +20,7 @@ from hubeau_data.models.qualite_rivieres import (
 )
 
 
-class QualiteRivieresAPI:
+class QualiteRivieresAPI(HubeauBaseAPI):
     BASE_URL = "https://hubeau.eaufrance.fr/api/v2/qualite_rivieres"
 
     _HEALTH_ENDPOINTS = [
@@ -31,10 +32,10 @@ class QualiteRivieresAPI:
 
     def get_stations(self, params: Optional[StationPcParams] = None) -> List[StationPc]:
         """Fetch physico-chemical monitoring stations."""
-        url = f"{self.BASE_URL}/station_pc"
-        query_params = params.model_dump(exclude_none=True) if params else {}
-        resp = httpx.get(url, params=query_params, timeout=30)
-        resp.raise_for_status()
+        resp = self._get(
+            f"{self.BASE_URL}/station_pc",
+            params.model_dump(exclude_none=True) if params else None,
+        )
         return [StationPc(**item) for item in resp.json().get("data", [])]
 
     def get_analyses(
@@ -51,8 +52,7 @@ class QualiteRivieresAPI:
         page = 1
         while len(results) < max_records:
             query_params["page"] = page
-            resp = httpx.get(url, params=query_params, timeout=30)
-            resp.raise_for_status()
+            resp = self._get(url, query_params)
             data = resp.json().get("data", [])
             if not data:
                 break
@@ -62,17 +62,12 @@ class QualiteRivieresAPI:
             page += 1
         return results[:max_records]
 
-    # --- Health & Coverage ---
-
     def check_health(self, n_requests: int = 3) -> HealthReport:
-        """Probe all endpoints N times and return latency stats."""
         statuses: List[EndpointStatus] = []
-
         for endpoint, probe_params in self._HEALTH_ENDPOINTS:
             url = f"{self.BASE_URL}/{endpoint}"
             latencies: List[float] = []
             error: Optional[str] = None
-
             for _ in range(n_requests):
                 try:
                     t0 = time.perf_counter()
@@ -82,7 +77,6 @@ class QualiteRivieresAPI:
                 except Exception as e:
                     error = type(e).__name__
                     break
-
             if latencies and error is None:
                 statuses.append(
                     EndpointStatus(
@@ -95,13 +89,8 @@ class QualiteRivieresAPI:
                 )
             else:
                 statuses.append(
-                    EndpointStatus(
-                        name=endpoint,
-                        ok=False,
-                        error=error or "unknown",
-                    )
+                    EndpointStatus(name=endpoint, ok=False, error=error or "unknown")
                 )
-
         ok_count = sum(s.ok for s in statuses)
         return HealthReport(
             api="qualite_rivieres",
@@ -117,9 +106,7 @@ class QualiteRivieresAPI:
         n_stations: int = 3,
         random: bool = False,
     ) -> CoverageReport:
-        """Check data availability for one station or a sample of stations."""
         checked_at = datetime.now(timezone.utc)
-
         if code_station is not None:
             station_codes = [code_station]
             random_sample = False
@@ -133,11 +120,8 @@ class QualiteRivieresAPI:
                 stations = stations[:n_stations]
             station_codes = [s.code_station for s in stations if s.code_station]
             random_sample = random
-
         windows: List[DataWindow] = []
-
         for code in station_codes:
-            # analyse_pc
             try:
                 resp = httpx.get(
                     f"{self.BASE_URL}/analyse_pc",
@@ -163,7 +147,6 @@ class QualiteRivieresAPI:
                         error=type(e).__name__,
                     )
                 )
-
         return CoverageReport(
             api="qualite_rivieres",
             checked_at=checked_at,

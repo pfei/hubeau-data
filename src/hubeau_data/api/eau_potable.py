@@ -5,6 +5,7 @@ from typing import List, Optional
 
 import httpx
 
+from hubeau_data.base import HubeauBaseAPI
 from hubeau_data.models.eau_potable import (
     CommuneUdi,
     CommuneUdiParams,
@@ -19,7 +20,7 @@ from hubeau_data.models.health import (
 )
 
 
-class EauPotableAPI:
+class EauPotableAPI(HubeauBaseAPI):
     BASE_URL = "https://hubeau.eaufrance.fr/api/v1/qualite_eau_potable"
 
     _HEALTH_ENDPOINTS = [
@@ -30,32 +31,27 @@ class EauPotableAPI:
     def get_communes_udi(
         self, params: Optional[CommuneUdiParams] = None
     ) -> List[CommuneUdi]:
-        """Fetch UDI-commune links (distribution networks)."""
-        url = f"{self.BASE_URL}/communes_udi"
-        query_params = params.model_dump(exclude_none=True) if params else {}
-        resp = httpx.get(url, params=query_params, timeout=30)
-        resp.raise_for_status()
+        resp = self._get(
+            f"{self.BASE_URL}/communes_udi",
+            params.model_dump(exclude_none=True) if params else None,
+        )
         return [CommuneUdi(**item) for item in resp.json().get("data", [])]
 
     def get_resultats_dis(
         self, params: Optional[ResultatEauPotableParams] = None
     ) -> List[ResultatEauPotable]:
-        """Fetch drinking water analysis results."""
-        url = f"{self.BASE_URL}/resultats_dis"
-        query_params = params.model_dump(exclude_none=True) if params else {}
-        resp = httpx.get(url, params=query_params, timeout=30)
-        resp.raise_for_status()
+        resp = self._get(
+            f"{self.BASE_URL}/resultats_dis",
+            params.model_dump(exclude_none=True) if params else None,
+        )
         return [ResultatEauPotable(**item) for item in resp.json().get("data", [])]
 
     def check_health(self, n_requests: int = 3) -> HealthReport:
-        """Probe all endpoints N times and return latency stats."""
         statuses: List[EndpointStatus] = []
-
         for endpoint, probe_params in self._HEALTH_ENDPOINTS:
             url = f"{self.BASE_URL}/{endpoint}"
             latencies: List[float] = []
             error: Optional[str] = None
-
             for _ in range(n_requests):
                 try:
                     t0 = time.perf_counter()
@@ -65,7 +61,6 @@ class EauPotableAPI:
                 except Exception as e:
                     error = type(e).__name__
                     break
-
             if latencies and error is None:
                 statuses.append(
                     EndpointStatus(
@@ -78,13 +73,8 @@ class EauPotableAPI:
                 )
             else:
                 statuses.append(
-                    EndpointStatus(
-                        name=endpoint,
-                        ok=False,
-                        error=error or "unknown",
-                    )
+                    EndpointStatus(name=endpoint, ok=False, error=error or "unknown")
                 )
-
         ok_count = sum(s.ok for s in statuses)
         return HealthReport(
             api="eau_potable",
@@ -100,9 +90,7 @@ class EauPotableAPI:
         n_communes: int = 3,
         random: bool = False,
     ) -> CoverageReport:
-        """Check data availability for one commune or a sample."""
         checked_at = datetime.now(timezone.utc)
-
         if code_commune is not None:
             commune_codes = [code_commune]
             random_sample = False
@@ -116,9 +104,7 @@ class EauPotableAPI:
                 communes = communes[:n_communes]
             commune_codes = [c.code_commune for c in communes if c.code_commune]
             random_sample = random
-
         windows: List[DataWindow] = []
-
         for code in commune_codes:
             try:
                 resp = httpx.get(
@@ -145,7 +131,6 @@ class EauPotableAPI:
                         error=type(e).__name__,
                     )
                 )
-
         return CoverageReport(
             api="eau_potable",
             checked_at=checked_at,

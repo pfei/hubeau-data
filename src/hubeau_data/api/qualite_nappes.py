@@ -5,6 +5,7 @@ from typing import List, Optional
 
 import httpx
 
+from hubeau_data.base import HubeauBaseAPI
 from hubeau_data.models.health import (
     CoverageReport,
     DataWindow,
@@ -19,7 +20,7 @@ from hubeau_data.models.qualite_nappes import (
 )
 
 
-class QualiteNappesAPI:
+class QualiteNappesAPI(HubeauBaseAPI):
     BASE_URL = "https://hubeau.eaufrance.fr/api/v1/qualite_nappes"
 
     _HEALTH_ENDPOINTS = [
@@ -30,11 +31,10 @@ class QualiteNappesAPI:
     def get_stations(
         self, params: Optional[StationNappeParams] = None
     ) -> List[StationNappe]:
-        """Fetch groundwater quality stations."""
-        url = f"{self.BASE_URL}/stations"
-        query_params = params.model_dump(exclude_none=True) if params else {}
-        resp = httpx.get(url, params=query_params, timeout=30)
-        resp.raise_for_status()
+        resp = self._get(
+            f"{self.BASE_URL}/stations",
+            params.model_dump(exclude_none=True) if params else None,
+        )
         return [StationNappe(**item) for item in resp.json().get("data", [])]
 
     def get_analyses(
@@ -42,7 +42,6 @@ class QualiteNappesAPI:
         params: Optional[AnalyseNappeParams] = None,
         max_records: int = 1000,
     ) -> List[AnalyseNappe]:
-        """Fetch groundwater quality analyses, paginated."""
         url = f"{self.BASE_URL}/analyses"
         query_params = params.model_dump(exclude_none=True) if params else {}
         page_size = int(query_params.get("size", 100))
@@ -51,8 +50,7 @@ class QualiteNappesAPI:
         page = 1
         while len(results) < max_records:
             query_params["page"] = page
-            resp = httpx.get(url, params=query_params, timeout=30)
-            resp.raise_for_status()
+            resp = self._get(url, query_params)
             data = resp.json().get("data", [])
             if not data:
                 break
@@ -63,14 +61,11 @@ class QualiteNappesAPI:
         return results[:max_records]
 
     def check_health(self, n_requests: int = 3) -> HealthReport:
-        """Probe all endpoints N times and return latency stats."""
         statuses: List[EndpointStatus] = []
-
         for endpoint, probe_params in self._HEALTH_ENDPOINTS:
             url = f"{self.BASE_URL}/{endpoint}"
             latencies: List[float] = []
             error: Optional[str] = None
-
             for _ in range(n_requests):
                 try:
                     t0 = time.perf_counter()
@@ -80,7 +75,6 @@ class QualiteNappesAPI:
                 except Exception as e:
                     error = type(e).__name__
                     break
-
             if latencies and error is None:
                 statuses.append(
                     EndpointStatus(
@@ -93,13 +87,8 @@ class QualiteNappesAPI:
                 )
             else:
                 statuses.append(
-                    EndpointStatus(
-                        name=endpoint,
-                        ok=False,
-                        error=error or "unknown",
-                    )
+                    EndpointStatus(name=endpoint, ok=False, error=error or "unknown")
                 )
-
         ok_count = sum(s.ok for s in statuses)
         return HealthReport(
             api="qualite_nappes",
@@ -115,9 +104,7 @@ class QualiteNappesAPI:
         n_stations: int = 3,
         random: bool = False,
     ) -> CoverageReport:
-        """Check data availability for one station or a sample of stations."""
         checked_at = datetime.now(timezone.utc)
-
         if bss_id is not None:
             station_ids = [bss_id]
             random_sample = False
@@ -131,9 +118,7 @@ class QualiteNappesAPI:
                 stations = stations[:n_stations]
             station_ids = [s.bss_id for s in stations if s.bss_id]
             random_sample = random
-
         windows: List[DataWindow] = []
-
         for sid in station_ids:
             try:
                 resp = httpx.get(
@@ -160,7 +145,6 @@ class QualiteNappesAPI:
                         error=type(e).__name__,
                     )
                 )
-
         return CoverageReport(
             api="qualite_nappes",
             checked_at=checked_at,

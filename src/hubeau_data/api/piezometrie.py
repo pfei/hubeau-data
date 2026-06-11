@@ -5,6 +5,7 @@ from typing import List, Optional
 
 import httpx
 
+from hubeau_data.base import HubeauBaseAPI
 from hubeau_data.models.health import (
     CoverageReport,
     DataWindow,
@@ -21,7 +22,7 @@ from hubeau_data.models.piezometrie import (
 )
 
 
-class PiezometrieAPI:
+class PiezometrieAPI(HubeauBaseAPI):
     BASE_URL = "https://hubeau.eaufrance.fr/api/v1/niveaux_nappes"
 
     _HEALTH_ENDPOINTS = [
@@ -33,42 +34,36 @@ class PiezometrieAPI:
     def get_stations(
         self, params: Optional[StationPiezoParams] = None
     ) -> List[StationPiezo]:
-        """Fetch piezometric stations."""
-        url = f"{self.BASE_URL}/stations"
-        query_params = params.model_dump(exclude_none=True) if params else {}
-        resp = httpx.get(url, params=query_params, timeout=30)
-        resp.raise_for_status()
+        resp = self._get(
+            f"{self.BASE_URL}/stations",
+            params.model_dump(exclude_none=True) if params else None,
+        )
         return [StationPiezo(**item) for item in resp.json().get("data", [])]
 
     def get_chroniques(
         self, params: Optional[ChroniquePiezoParams] = None
     ) -> List[ChroniquePiezo]:
-        """Fetch piezometric time series."""
-        url = f"{self.BASE_URL}/chroniques"
-        query_params = params.model_dump(exclude_none=True) if params else {}
-        resp = httpx.get(url, params=query_params, timeout=30)
-        resp.raise_for_status()
+        resp = self._get(
+            f"{self.BASE_URL}/chroniques",
+            params.model_dump(exclude_none=True) if params else None,
+        )
         return [ChroniquePiezo(**item) for item in resp.json().get("data", [])]
 
     def get_chroniques_tr(
         self, params: Optional[ChroniquePiezoTrParams] = None
     ) -> List[ChroniquePiezoTr]:
-        """Fetch real-time piezometric time series (raw data)."""
-        url = f"{self.BASE_URL}/chroniques_tr"
-        query_params = params.model_dump(exclude_none=True) if params else {}
-        resp = httpx.get(url, params=query_params, timeout=30)
-        resp.raise_for_status()
+        resp = self._get(
+            f"{self.BASE_URL}/chroniques_tr",
+            params.model_dump(exclude_none=True) if params else None,
+        )
         return [ChroniquePiezoTr(**item) for item in resp.json().get("data", [])]
 
     def check_health(self, n_requests: int = 3) -> HealthReport:
-        """Probe all endpoints N times and return latency stats."""
         statuses: List[EndpointStatus] = []
-
         for endpoint, probe_params in self._HEALTH_ENDPOINTS:
             url = f"{self.BASE_URL}/{endpoint}"
             latencies: List[float] = []
             error: Optional[str] = None
-
             for _ in range(n_requests):
                 try:
                     t0 = time.perf_counter()
@@ -78,7 +73,6 @@ class PiezometrieAPI:
                 except Exception as e:
                     error = type(e).__name__
                     break
-
             if latencies and error is None:
                 statuses.append(
                     EndpointStatus(
@@ -91,13 +85,8 @@ class PiezometrieAPI:
                 )
             else:
                 statuses.append(
-                    EndpointStatus(
-                        name=endpoint,
-                        ok=False,
-                        error=error or "unknown",
-                    )
+                    EndpointStatus(name=endpoint, ok=False, error=error or "unknown")
                 )
-
         ok_count = sum(s.ok for s in statuses)
         return HealthReport(
             api="piezometrie",
@@ -113,9 +102,7 @@ class PiezometrieAPI:
         n_stations: int = 3,
         random: bool = False,
     ) -> CoverageReport:
-        """Check data availability for one station or a sample of stations."""
         checked_at = datetime.now(timezone.utc)
-
         if bss_id is not None:
             station_ids = [bss_id]
             random_sample = False
@@ -129,9 +116,7 @@ class PiezometrieAPI:
                 stations = stations[:n_stations]
             station_ids = [s.bss_id for s in stations if s.bss_id]
             random_sample = random
-
         windows: List[DataWindow] = []
-
         for sid in station_ids:
             try:
                 resp = httpx.get(
@@ -158,7 +143,6 @@ class PiezometrieAPI:
                         error=type(e).__name__,
                     )
                 )
-
         return CoverageReport(
             api="piezometrie",
             checked_at=checked_at,
