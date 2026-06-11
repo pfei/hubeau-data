@@ -95,7 +95,7 @@ def test_get_stations_live() -> None:
 @pytest.mark.live
 @pytest.mark.xfail(
     reason="Qualité Nappes API has known stability issues (503, timeouts)",
-    raises=httpx.HTTPStatusError,
+    raises=(httpx.HTTPStatusError, httpx.ReadTimeout),
     strict=False,
 )
 def test_get_analyses_live() -> None:
