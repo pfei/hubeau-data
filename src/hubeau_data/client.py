@@ -1,6 +1,7 @@
 from typing import List
 
 from hubeau_data.api.hydrometrie import HydrometrieAPI
+from hubeau_data.api.piezometrie import PiezometrieAPI
 from hubeau_data.api.qualite_rivieres import QualiteRivieresAPI
 from hubeau_data.models.hydrometrie import (
     ObsElab,
@@ -22,6 +23,7 @@ class HubeauClient:
     def __init__(self) -> None:
         self.qualite_rivieres = QualiteRivieresAPI()
         self.hydrometrie = HydrometrieAPI()
+        self.piezometrie = PiezometrieAPI()
 
 
 class SimpleHydrometrieClient:
