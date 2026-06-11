@@ -47,6 +47,21 @@ class ChroniquePiezo(BaseModel):
     nom_producteur: Optional[str] = None
 
 
+class ChroniquePiezoTr(BaseModel):
+    bss_id: Optional[str] = None
+    code_bss: Optional[str] = None
+    urn_bss: Optional[str] = None
+    date_mesure: Optional[str] = None
+    date_maj: Optional[str] = None
+    timestamp_mesure: Optional[int] = None
+    profondeur_nappe: Optional[float] = None
+    niveau_eau_ngf: Optional[float] = None
+    longitude: Optional[float] = None
+    latitude: Optional[float] = None
+    altitude_station: Optional[float] = None
+    altitude_repere: Optional[float] = None
+
+
 class StationPiezoParams(BaseModel):
     """
     Query parameters for piezometric stations.
@@ -99,5 +114,27 @@ class ChroniquePiezoParams(BaseModel):
     sort: Optional[str] = Field(
         "asc", pattern="^(asc|desc)$", description="Sort by date_mesure"
     )
+
+    model_config = ConfigDict(extra="allow")
+
+
+class ChroniquePiezoTrParams(BaseModel):
+    """
+    Query parameters for real-time piezometric time series.
+    see: https://hubeau.eaufrance.fr/page/api-piezometrie
+    """
+
+    bss_id: Optional[List[str]] = Field(None, description="New BSS code(s)")
+    code_bss: Optional[List[str]] = Field(None, description="Old BSS code(s)")
+    date_debut_mesure: Optional[str] = Field(
+        None, description="Start date (yyyy-MM-dd)"
+    )
+    date_fin_mesure: Optional[str] = Field(None, description="End date (yyyy-MM-dd)")
+    niveau_ngf_min: Optional[float] = Field(None, description="Min NGF level")
+    niveau_ngf_max: Optional[float] = Field(None, description="Max NGF level")
+    profondeur_min: Optional[float] = Field(None, description="Min depth")
+    profondeur_max: Optional[float] = Field(None, description="Max depth")
+    size: Optional[int] = Field(None, ge=1, le=20000)
+    sort: Optional[str] = Field("asc", pattern="^(asc|desc)$")
 
     model_config = ConfigDict(extra="allow")

@@ -14,6 +14,8 @@ from hubeau_data.models.health import (
 from hubeau_data.models.piezometrie import (
     ChroniquePiezo,
     ChroniquePiezoParams,
+    ChroniquePiezoTr,
+    ChroniquePiezoTrParams,
     StationPiezo,
     StationPiezoParams,
 )
@@ -25,6 +27,7 @@ class PiezometrieAPI:
     _HEALTH_ENDPOINTS = [
         ("stations", {"size": 1}),
         ("chroniques", {"size": 1}),
+        ("chroniques_tr", {"size": 1}),
     ]
 
     def get_stations(
@@ -46,6 +49,16 @@ class PiezometrieAPI:
         resp = httpx.get(url, params=query_params, timeout=30)
         resp.raise_for_status()
         return [ChroniquePiezo(**item) for item in resp.json().get("data", [])]
+
+    def get_chroniques_tr(
+        self, params: Optional[ChroniquePiezoTrParams] = None
+    ) -> List[ChroniquePiezoTr]:
+        """Fetch real-time piezometric time series (raw data)."""
+        url = f"{self.BASE_URL}/chroniques_tr"
+        query_params = params.model_dump(exclude_none=True) if params else {}
+        resp = httpx.get(url, params=query_params, timeout=30)
+        resp.raise_for_status()
+        return [ChroniquePiezoTr(**item) for item in resp.json().get("data", [])]
 
     def check_health(self, n_requests: int = 3) -> HealthReport:
         """Probe all endpoints N times and return latency stats."""

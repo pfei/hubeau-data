@@ -10,7 +10,11 @@ import pytest
 from pytest_httpx import HTTPXMock
 
 from hubeau_data.client import HubeauClient
-from hubeau_data.models.piezometrie import ChroniquePiezo, StationPiezo
+from hubeau_data.models.piezometrie import (
+    ChroniquePiezo,
+    ChroniquePiezoTr,
+    StationPiezo,
+)
 
 
 @pytest.fixture(autouse=True, scope="session")
@@ -28,6 +32,12 @@ MINIMAL_CHRONIQUE = {
     "niveau_nappe_eau": 12.5,
 }
 
+
+MINIMAL_CHRONIQUE_TR = {
+    "bss_id": "BSS001ABCD",
+    "date_mesure": "2026-06-01",
+    "niveau_eau_ngf": 45.2,
+}
 
 # ==============================================================================
 # 1. MOCKED TESTS
@@ -66,6 +76,24 @@ def test_get_chroniques_mocked(httpx_mock: HTTPXMock) -> None:
     assert chroniques[0].date_mesure == "2024-01-15"
 
 
+def test_get_chroniques_tr_mocked(httpx_mock: HTTPXMock) -> None:
+    httpx_mock.add_response(
+        url=re.compile(r".*/v1/niveaux_nappes/chroniques_tr.*"),
+        json={"count": 1, "data": [MINIMAL_CHRONIQUE_TR]},
+        status_code=200,
+    )
+    client = HubeauClient()
+    from hubeau_data.models.piezometrie import ChroniquePiezoTrParams
+
+    chroniques = client.piezometrie.get_chroniques_tr(
+        params=ChroniquePiezoTrParams(bss_id=["BSS001ABCD"], size=1)
+    )
+    assert isinstance(chroniques, list)
+    assert len(chroniques) == 1
+    assert isinstance(chroniques[0], ChroniquePiezoTr)
+    assert chroniques[0].niveau_eau_ngf == 45.2
+
+
 # ==============================================================================
 # 2. LIVE TESTS
 # ==============================================================================
@@ -100,3 +128,24 @@ def test_get_chroniques_live() -> None:
     assert isinstance(chroniques, list)
     if chroniques:
         assert isinstance(chroniques[0], ChroniquePiezo)
+
+
+@pytest.mark.live
+def test_get_chroniques_tr_live() -> None:
+    from hubeau_data.models.piezometrie import (
+        ChroniquePiezoTrParams,
+        StationPiezoParams,
+    )
+
+    client = HubeauClient()
+    stations = client.piezometrie.get_stations(
+        params=StationPiezoParams(code_departement=["75"], size=1)
+    )
+    if not stations or not stations[0].bss_id:
+        pytest.skip("No station available")
+    chroniques = client.piezometrie.get_chroniques_tr(
+        params=ChroniquePiezoTrParams(bss_id=[stations[0].bss_id], size=1)
+    )
+    assert isinstance(chroniques, list)
+    if chroniques:
+        assert isinstance(chroniques[0], ChroniquePiezoTr)
