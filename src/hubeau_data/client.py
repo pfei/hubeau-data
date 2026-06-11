@@ -3,6 +3,7 @@ from hubeau_data.api.hydrometrie import HydrometrieAPI
 from hubeau_data.api.piezometrie import PiezometrieAPI
 from hubeau_data.api.qualite_nappes import QualiteNappesAPI
 from hubeau_data.api.qualite_rivieres import QualiteRivieresAPI
+from hubeau_data.api.temperature import TemperatureAPI
 
 
 class HubeauClient:
@@ -16,3 +17,4 @@ class HubeauClient:
         self.piezometrie = PiezometrieAPI()
         self.qualite_nappes = QualiteNappesAPI()
         self.ecoulement = EcoulementAPI()
+        self.temperature = TemperatureAPI()
