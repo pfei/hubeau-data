@@ -55,6 +55,36 @@ cov = client.hydrometrie.data_coverage(code_station="Y120201001")
 print(cov.summary())
 ```
 
+## Async client
+
+For bulk data collection — e.g. fetching many stations before inserting into a database —
+`AsyncHubeauClient` mirrors the sync client and supports `asyncio.gather()` for parallel requests:
+
+```python
+import asyncio
+from hubeau_data.async_client import AsyncHubeauClient
+from hubeau_data.models.hydrometrie import ObservationTrParams
+
+async def main():
+    async with AsyncHubeauClient() as client:
+        codes = ["Y120201001", "K418001001", "A1234567"]
+        tasks = [
+            client.hydrometrie.get_observations_tr(
+                params=ObservationTrParams(code_station=[c], size=10)
+            )
+            for c in codes
+        ]
+        results = await asyncio.gather(*tasks)
+        for code, obs in zip(codes, results):
+            print(code, len(obs), "observations")
+
+asyncio.run(main())
+```
+
+All 11 APIs are available on `AsyncHubeauClient` with the same method names as the sync client
+(`get_sites`, `get_stations`, etc.) — just `await` them. Retry logic (tenacity) applies to async
+requests too. `check_health` and `data_coverage` are sync-only (diagnostic tools, not bulk operations).
+
 ## API Coverage
 
 | API | Status | Notes |
@@ -73,12 +103,15 @@ print(cov.summary())
 | **Surveillance Littoral** | 🚫 Skipped | API being decommissioned by Hub'Eau |
 | **Indicateurs Services** | 🚧 Maintenance | API under maintenance — see services.eaufrance.fr |
 
-All supported APIs expose `check_health(n_requests)` and `data_coverage(...)`.
+All supported APIs expose `check_health(n_requests)` and `data_coverage(...)`, and are available
+on both `HubeauClient` (sync) and `AsyncHubeauClient` (async, except health/coverage).
 
 ## Features
 
 - Pydantic v2 models for all responses — strict runtime validation, IDE autocomplete
 - Typed query `Params` models for every endpoint — no more `**kwargs`
+- Sync (`HubeauClient`) and async (`AsyncHubeauClient`) clients, same method names
+- Automatic retry with exponential backoff (tenacity) on transient errors — Hub'Eau APIs have known stability issues
 - `check_health(n_requests)` — latency stats per endpoint, healthy ratio
 - `data_coverage(...)` — data availability windows per station or territory
 - Optional extras: `[dataframe]`, `[geo]`, `[viz]` — install only what you need
@@ -86,6 +119,7 @@ All supported APIs expose `check_health(n_requests)` and `data_coverage(...)`.
 ## Stack
 
 - Python 3.13+, `mypy --strict`, `ruff`, `uv`, `hatchling`, src-layout
+- `httpx` + `tenacity` for resilient sync/async HTTP
 - `pytest-httpx` mocked test suite — CI runs without network dependency
 
 ## Installation & Development
@@ -127,9 +161,10 @@ Exploration scripts under `scripts/qualite_rivieres/` and `scripts/hydrometrie/`
 - [x] Full Hub'Eau API coverage (11 APIs implemented)
 - [x] `check_health` and `data_coverage` on all APIs
 - [x] Typed `Params` models for every endpoint
+- [x] Automatic retry with exponential backoff (tenacity)
+- [x] Async client (`AsyncHubeauClient`, all 11 APIs)
 - [x] Optional dependency groups — `pandas`, `geopandas`, `matplotlib` as extras
 - [x] `CHANGELOG.md` + `CONTRIBUTING.md`
-- [ ] Async client (`httpx.AsyncClient`)
 - [ ] PyPI release
 
 ## License
