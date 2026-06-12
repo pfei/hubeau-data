@@ -15,7 +15,7 @@ class Site(BaseModel):
     code_systeme_alti_site: Optional[int] = None
     code_troncon_hydro_site: Optional[str] = None
     code_zone_hydro_site: Optional[str] = None
-    commentaire_influence_generale_site: None = None
+    commentaire_influence_generale_site: Optional[str] = None
     commentaire_site: Optional[str] = None
     coordonnee_x_site: float
     coordonnee_y_site: float
