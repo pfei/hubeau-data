@@ -144,7 +144,7 @@ class HydrometrieAPI(HubeauBaseAPI):
                 try:
                     resp = httpx.get(
                         f"{self.BASE_URL}/{endpoint}",
-                        params={"code_station": code, "size": 1, "sort": "desc"},
+                        params={"code_entite": code, "size": 1, "sort": "desc"},
                         timeout=10,
                     )
                     resp.raise_for_status()

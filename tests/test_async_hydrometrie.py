@@ -70,7 +70,7 @@ async def test_parallel_fetch_live() -> None:
         codes = ["Y120201001", "K418001001"]
         tasks = [
             client.hydrometrie.get_observations_tr(
-                params=ObservationTrParams(code_station=[c], size=1)
+                params=ObservationTrParams(code_entite=[c], size=1)
             )
             for c in codes
         ]

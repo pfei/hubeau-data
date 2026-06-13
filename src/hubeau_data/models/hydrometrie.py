@@ -181,8 +181,14 @@ class ObsElabParams(BaseModel):
     see: https://hubeau.eaufrance.fr/page/api-hydrometrie#/hydrometrie/obs_elab
     """
 
-    code_station: Optional[List[str]] = Field(None, description="Station code(s)")
-    code_site: Optional[List[str]] = Field(None, description="Site code(s)")
+    code_entite: Optional[List[str]] = Field(
+        None,
+        description=(
+            "Sandre code(s) for hydrometric sites or stations. "
+            "Maximum 100 codes. Supports wildcard patterns (e.g. 'K*')."
+        ),
+    )
+
     grandeur_hydro_elab: Optional[str] = Field(
         None, description="QmnJ, QmM, HIXM, HIXnJ, QINM, QINnJ, QixM, QIXnJ"
     )
@@ -208,8 +214,16 @@ class ObservationTrParams(BaseModel):
     see: https://hubeau.eaufrance.fr/page/api-hydrometrie#/hydrometrie/observations
     """
 
-    code_station: Optional[List[str]] = Field(None, description="Station code(s)")
-    code_site: Optional[List[str]] = Field(None, description="Site code(s)")
+    code_entite: Optional[List[str]] = Field(
+        None,
+        description=(
+            "Site or station code(s). A site code is the 4-character "
+            "hydrographic zone code + a 4-digit increment (e.g. J4310010). "
+            "A station code is the site code + a 2-digit station suffix. "
+            "Supports wildcard patterns (e.g. 'K*')."
+        ),
+    )
+
     grandeur_hydro: Optional[List[str]] = Field(
         None, description="Hydrometric magnitude: H (height) or Q (flow)"
     )

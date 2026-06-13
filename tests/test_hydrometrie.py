@@ -156,7 +156,7 @@ def test_observation_tr_model_validation() -> None:
     from hubeau_data.models.hydrometrie import ObservationTrParams
 
     obs = HubeauClient().hydrometrie.get_observations_tr(
-        params=ObservationTrParams(code_station=["Y120201001"], size=1)
+        params=ObservationTrParams(code_entite=["Y120201001"], size=1)
     )
     for o in obs:
         assert isinstance(o, ObservationTr)
@@ -168,7 +168,7 @@ def test_obs_elab_model_validation() -> None:
 
     obs = HubeauClient().hydrometrie.get_obs_elab(
         params=ObsElabParams(
-            code_station=["Y390001001"], grandeur_hydro_elab="QmM", size=1
+            code_entite=["Y390001001"], grandeur_hydro_elab="QmM", size=1
         )
     )
     for o in obs:
@@ -202,7 +202,7 @@ def test_get_observations_by_station_live() -> None:
     from hubeau_data.models.hydrometrie import ObservationTrParams
 
     obs = HubeauClient().hydrometrie.get_observations_tr(
-        params=ObservationTrParams(code_station=["Y120201001"], size=1)
+        params=ObservationTrParams(code_entite=["O001004003"], size=1)
     )
     assert len(obs) > 0
     assert hasattr(obs[0], "date_obs")
@@ -213,7 +213,7 @@ def test_get_obs_elab_by_station_live() -> None:
     from hubeau_data.models.hydrometrie import ObsElabParams
 
     obs = HubeauClient().hydrometrie.get_obs_elab(
-        params=ObsElabParams(code_station=["Y390001001"], size=1)
+        params=ObsElabParams(code_entite=["O001004003"], size=1)
     )
     assert len(obs) > 0
     assert hasattr(obs[0], "date_obs_elab")

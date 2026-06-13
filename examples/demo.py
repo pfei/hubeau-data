@@ -58,7 +58,7 @@ def run_demo() -> None:
         target_station = "Y120201001"
         print(f"Fetching real-time observations for station: {target_station}")
 
-        obs_params = ObservationTrParams(code_station=[target_station], size=3)
+        obs_params = ObservationTrParams(code_entite=[target_station], size=3)
         observations = client.hydrometrie.get_observations_tr(params=obs_params)
 
         print(f"✓ Retrieved {len(observations)} real-time observations.")
