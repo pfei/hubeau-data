@@ -1,9 +1,35 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
+
+## [0.1.0] - 2026-06-13
+
+### Fixed
+
+- **Breaking**: `hydrometrie` real-time and elaborated observations endpoints
+  (`observations_tr`, `obs_elab`) only support the `code_entite` query
+  parameter, not `code_station` or `code_site` as previously modeled.
+  Those invalid parameters were silently ignored by the Hub'Eau API,
+  causing `get_observations_tr()`, `get_obs_elab()`, and
+  `data_coverage()` to return globally unfiltered results instead of
+  data for the requested station.
+
+  `ObservationTrParams` and `ObsElabParams` now expose a single
+  `code_entite: Optional[List[str]]` field, accepting either a site or
+  station code. Callers passing `code_station=` or `code_site=` to
+  these two params models must switch to `code_entite=`.
+
+  Audited the equivalent `data_coverage()` pattern across
+  `qualite_rivieres`, `ecoulement`, `poisson`, and `temperature` — all
+  four correctly use `code_station` for their respective endpoints, no
+  changes needed there. A full audit of query parameters across the
+  remaining APIs is tracked as future work.
+
+## [0.0.1] - 2026-06-12
 
 ### Added
 
@@ -18,31 +44,3 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Pydantic v2 models for all API responses
 - Pydantic mypy plugin for strict type checking
 - Mocked test suite using `pytest-httpx` — CI runs without network dependency
-- `@pytest.mark.live` marker to separate integration from unit tests
-- `xfail` markers on known unstable endpoints (qualite_rivieres, qualite_nappes,
-  temperature chronique, prelevements chroniques)
-- `models/health.py` — shared `EndpointStatus`, `HealthReport`, `DataWindow`,
-  `CoverageReport` models
-- Optional dependency groups: `[dataframe]`, `[geo]`, `[viz]`, `[all]`
-- `CHANGELOG.md` + `CONTRIBUTING.md`
-- CI badge in README
-
-### Changed
-
-- Migrated all API methods from `**kwargs` to typed `Params` models
-- Rewrote README: full API coverage table, assertive tone, accurate quickstart
-- Split runtime dependencies — core install requires only `httpx` and `pydantic`
-- Pinned `mypy<2.0` pending pydantic plugin compatibility with mypy 2.x
-- Removed `SimpleHydrometrieClient` — `HubeauClient` is the single entry point
-
-### Fixed
-
-- `get_obs_elab` was outside `HydrometrieAPI` class (indentation bug)
-- `code_entite` → `code_station` for hydrometrie observations (API mismatch)
-- `Station` and `Site` fields relaxed to `Optional` — Hub'Eau returns null on many fields
-- `phytopharmaceutiques` BASE_URL corrected to `/api/v1/vente_achat_phyto`
-
-### Skipped
-
-- **Surveillance Littoral** — API being decommissioned by Hub'Eau
-- **Indicateurs Services** — API under maintenance
