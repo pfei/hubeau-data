@@ -12,6 +12,32 @@ Typed, modern Python client for the [Hub'Eau](https://hubeau.eaufrance.fr/) wate
 Hub'Eau exposes 15+ REST APIs for French national water data — but no official typed Python client exists.
 This library fills that gap: Pydantic v2 models, strict typing, and a clean interface ready for data science workflows.
 
+## Installation
+
+From PyPI (latest stable release):
+
+```bash
+pip install hubeau-data
+# or
+uv add hubeau-data
+```
+
+For development (clone + editable install with all tools):
+
+```bash
+git clone https://github.com/pfei/hubeau-data.git
+cd hubeau-data
+uv sync                # core dependencies
+uv sync --all-extras   # with optional extras (pandas, etc.) if defined
+```
+
+```bash
+uv run ruff check .          # lint
+uv run mypy .                # type check
+uv run pytest -m "not live"  # fast mocked tests — no network required
+uv run pytest -m "live" -s   # live integration tests against real Hub'Eau APIs
+```
+
 ## Quickstart
 
 ```python
@@ -121,22 +147,6 @@ on both `HubeauClient` (sync) and `AsyncHubeauClient` (async, except health/cove
 - Python 3.13+, `mypy --strict`, `ruff`, `uv`, `hatchling`, src-layout
 - `httpx` + `tenacity` for resilient sync/async HTTP
 - `pytest-httpx` mocked test suite — CI runs without network dependency
-
-## Installation & Development
-
-```zsh
-git clone https://github.com/pfei/hubeau-data.git
-cd hubeau-data
-uv sync                   # core only
-uv sync --all-extras      # with pandas, geopandas, matplotlib
-```
-
-```zsh
-uv run ruff check .           # lint
-uv run mypy .                 # type check
-uv run pytest -m "not live"   # fast mocked tests (CI)
-uv run pytest -m "live" -s    # real network integration tests
-```
 
 ## Examples & Scripts
 
