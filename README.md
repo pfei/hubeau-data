@@ -1,5 +1,7 @@
 # hubeau-data
 
+[![PyPI - Version](https://img.shields.io/pypi/v/hubeau-data)](https://pypi.org/project/hubeau-data/)
+[![PyPI - Downloads](https://img.shields.io/pypi/dm/hubeau-data)](https://pypi.org/project/hubeau-data/)
 [![CI](https://github.com/pfei/hubeau-data/actions/workflows/ci.yml/badge.svg)](https://github.com/pfei/hubeau-data/actions/workflows/ci.yml)
 [![Python Version](https://img.shields.io/badge/python-3.13+-blue.svg)](https://www.python.org/)
 [![Checked with mypy](https://img.shields.io/badge/mypy-strict-green.svg)](https://mypy.readthedocs.io/en/stable/config_file.html#using-a-pyproject-toml-file)
