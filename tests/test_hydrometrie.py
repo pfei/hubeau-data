@@ -13,6 +13,7 @@ from pytest_httpx import HTTPXMock
 
 from hubeau_data.client import HubeauClient
 from hubeau_data.models.hydrometrie import ObsElab, ObservationTr, Site, Station
+from hubeau_data.models.pagination import PagedResponse
 
 
 @pytest.fixture(autouse=True, scope="session")
@@ -104,10 +105,10 @@ def test_get_observations_tr_mocked(httpx_mock: HTTPXMock) -> None:
     )
     client = HubeauClient()
     obs = client.hydrometrie.get_observations_tr()
-    assert isinstance(obs, list)
-    assert len(obs) == 1
-    assert isinstance(obs[0], ObservationTr)
-    assert obs[0].code_station == "Y120201001"
+    assert isinstance(obs, PagedResponse)
+    assert len(obs.data) == 1
+    assert isinstance(obs.data[0], ObservationTr)
+    assert obs.data[0].code_station == "Y120201001"
 
 
 def test_get_obs_elab_mocked(httpx_mock: HTTPXMock) -> None:
@@ -118,10 +119,10 @@ def test_get_obs_elab_mocked(httpx_mock: HTTPXMock) -> None:
     )
     client = HubeauClient()
     obs = client.hydrometrie.get_obs_elab()
-    assert isinstance(obs, list)
-    assert len(obs) == 1
-    assert isinstance(obs[0], ObsElab)
-    assert obs[0].grandeur_hydro_elab == "QmM"
+    assert isinstance(obs, PagedResponse)
+    assert len(obs.data) == 1
+    assert isinstance(obs.data[0], ObsElab)
+    assert obs.data[0].grandeur_hydro_elab == "QmM"
 
 
 # ==============================================================================
@@ -158,7 +159,7 @@ def test_observation_tr_model_validation() -> None:
     obs = HubeauClient().hydrometrie.get_observations_tr(
         params=ObservationTrParams(code_entite=["Y120201001"], size=1)
     )
-    for o in obs:
+    for o in obs.data:
         assert isinstance(o, ObservationTr)
 
 
@@ -171,7 +172,7 @@ def test_obs_elab_model_validation() -> None:
             code_entite=["Y390001001"], grandeur_hydro_elab="QmM", size=1
         )
     )
-    for o in obs:
+    for o in obs.data:
         assert isinstance(o, ObsElab)
 
 
@@ -204,8 +205,8 @@ def test_get_observations_by_station_live() -> None:
     obs = HubeauClient().hydrometrie.get_observations_tr(
         params=ObservationTrParams(code_entite=["O001004003"], size=1)
     )
-    assert len(obs) > 0
-    assert hasattr(obs[0], "date_obs")
+    assert len(obs.data) > 0
+    assert hasattr(obs.data[0], "date_obs")
 
 
 @pytest.mark.live
@@ -215,5 +216,5 @@ def test_get_obs_elab_by_station_live() -> None:
     obs = HubeauClient().hydrometrie.get_obs_elab(
         params=ObsElabParams(code_entite=["O001004003"], size=1)
     )
-    assert len(obs) > 0
-    assert hasattr(obs[0], "date_obs_elab")
+    assert len(obs.data) > 0
+    assert hasattr(obs.data[0], "date_obs_elab")

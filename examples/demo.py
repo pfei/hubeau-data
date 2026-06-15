@@ -61,8 +61,8 @@ def run_demo() -> None:
         obs_params = ObservationTrParams(code_entite=[target_station], size=3)
         observations = client.hydrometrie.get_observations_tr(params=obs_params)
 
-        print(f"✓ Retrieved {len(observations)} real-time observations.")
-        for i, obs in enumerate(observations, 1):
+        print(f"✓ Retrieved {len(observations.data)} real-time observations.")
+        for i, obs in enumerate(observations.data, 1):
             print(
                 f"  -> Obs #{i}: Date: {obs.date_obs} | "
                 f"Value: {obs.resultat_obs} {obs.grandeur_hydro}"
