@@ -10,6 +10,7 @@ import pytest
 from pytest_httpx import HTTPXMock
 
 from hubeau_data.client import HubeauClient
+from hubeau_data.models.pagination import PagedResponse
 from hubeau_data.models.poisson import (
     IndicateurPoisson,
     ObservationPoisson,
@@ -58,10 +59,10 @@ def test_get_stations_mocked(httpx_mock: HTTPXMock) -> None:
     )
     client = HubeauClient()
     stations = client.poisson.get_stations()
-    assert isinstance(stations, list)
-    assert len(stations) == 1
-    assert isinstance(stations[0], StationPoisson)
-    assert stations[0].code_station == "01000001"
+    assert isinstance(stations, PagedResponse)
+    assert len(stations.data) == 1
+    assert isinstance(stations.data[0], StationPoisson)
+    assert stations.data[0].code_station == "01000001"
 
 
 def test_get_indicateurs_mocked(httpx_mock: HTTPXMock) -> None:
@@ -76,10 +77,10 @@ def test_get_indicateurs_mocked(httpx_mock: HTTPXMock) -> None:
     indicateurs = client.poisson.get_indicateurs(
         params=IndicateurPoissonParams(code_station=["01000001"], size=1)
     )
-    assert isinstance(indicateurs, list)
-    assert len(indicateurs) == 1
-    assert isinstance(indicateurs[0], IndicateurPoisson)
-    assert indicateurs[0].ipr_libelle_classe == "Très bon"
+    assert isinstance(indicateurs, PagedResponse)
+    assert len(indicateurs.data) == 1
+    assert isinstance(indicateurs.data[0], IndicateurPoisson)
+    assert indicateurs.data[0].ipr_libelle_classe == "Très bon"
 
 
 def test_get_observations_mocked(httpx_mock: HTTPXMock) -> None:
@@ -94,10 +95,10 @@ def test_get_observations_mocked(httpx_mock: HTTPXMock) -> None:
     obs = client.poisson.get_observations(
         params=ObservationPoissonParams(code_station=["01000001"], size=1)
     )
-    assert isinstance(obs, list)
-    assert len(obs) == 1
-    assert isinstance(obs[0], ObservationPoisson)
-    assert obs[0].nom_latin_taxon == "Salmo trutta"
+    assert isinstance(obs, PagedResponse)
+    assert len(obs.data) == 1
+    assert isinstance(obs.data[0], ObservationPoisson)
+    assert obs.data[0].nom_latin_taxon == "Salmo trutta"
 
 
 def test_get_operations_mocked(httpx_mock: HTTPXMock) -> None:
@@ -112,10 +113,10 @@ def test_get_operations_mocked(httpx_mock: HTTPXMock) -> None:
     ops = client.poisson.get_operations(
         params=OperationPoissonParams(code_station=["01000001"], size=1)
     )
-    assert isinstance(ops, list)
-    assert len(ops) == 1
-    assert isinstance(ops[0], OperationPoisson)
-    assert ops[0].protocole_peche == "Pêche complète à un ou plusieurs passages"
+    assert isinstance(ops, PagedResponse)
+    assert len(ops.data) == 1
+    assert isinstance(ops.data[0], OperationPoisson)
+    assert ops.data[0].protocole_peche == "Pêche complète à un ou plusieurs passages"
 
 
 # ==============================================================================
@@ -130,9 +131,9 @@ def test_get_stations_live() -> None:
     stations = HubeauClient().poisson.get_stations(
         params=StationPoissonParams(code_departement=["01"], size=1)
     )
-    assert isinstance(stations, list)
-    if stations:
-        assert isinstance(stations[0], StationPoisson)
+    assert isinstance(stations, PagedResponse)
+    if stations.data:
+        assert isinstance(stations.data[0], StationPoisson)
 
 
 @pytest.mark.live
@@ -142,14 +143,16 @@ def test_get_indicateurs_live() -> None:
     stations = HubeauClient().poisson.get_stations(
         params=StationPoissonParams(code_departement=["01"], size=1)
     )
-    if not stations or not stations[0].code_station:
+    if not stations.data or not stations.data[0].code_station:
         pytest.skip("No station available")
     indicateurs = HubeauClient().poisson.get_indicateurs(
-        params=IndicateurPoissonParams(code_station=[stations[0].code_station], size=1)
+        params=IndicateurPoissonParams(
+            code_station=[stations.data[0].code_station], size=1
+        )
     )
-    assert isinstance(indicateurs, list)
-    if indicateurs:
-        assert isinstance(indicateurs[0], IndicateurPoisson)
+    assert isinstance(indicateurs, PagedResponse)
+    if indicateurs.data:
+        assert isinstance(indicateurs.data[0], IndicateurPoisson)
 
 
 @pytest.mark.live
@@ -162,14 +165,16 @@ def test_get_observations_live() -> None:
     stations = HubeauClient().poisson.get_stations(
         params=StationPoissonParams(code_departement=["01"], size=1)
     )
-    if not stations or not stations[0].code_station:
+    if not stations.data or not stations.data[0].code_station:
         pytest.skip("No station available")
     obs = HubeauClient().poisson.get_observations(
-        params=ObservationPoissonParams(code_station=[stations[0].code_station], size=1)
+        params=ObservationPoissonParams(
+            code_station=[stations.data[0].code_station], size=1
+        )
     )
-    assert isinstance(obs, list)
-    if obs:
-        assert isinstance(obs[0], ObservationPoisson)
+    assert isinstance(obs, PagedResponse)
+    if obs.data:
+        assert isinstance(obs.data[0], ObservationPoisson)
 
 
 @pytest.mark.live
@@ -179,11 +184,13 @@ def test_get_operations_live() -> None:
     stations = HubeauClient().poisson.get_stations(
         params=StationPoissonParams(code_departement=["01"], size=1)
     )
-    if not stations or not stations[0].code_station:
+    if not stations.data or not stations.data[0].code_station:
         pytest.skip("No station available")
     ops = HubeauClient().poisson.get_operations(
-        params=OperationPoissonParams(code_station=[stations[0].code_station], size=1)
+        params=OperationPoissonParams(
+            code_station=[stations.data[0].code_station], size=1
+        )
     )
-    assert isinstance(ops, list)
-    if ops:
-        assert isinstance(ops[0], OperationPoisson)
+    assert isinstance(ops, PagedResponse)
+    if ops.data:
+        assert isinstance(ops.data[0], OperationPoisson)
