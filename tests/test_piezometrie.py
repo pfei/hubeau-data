@@ -10,6 +10,7 @@ import pytest
 from pytest_httpx import HTTPXMock
 
 from hubeau_data.client import HubeauClient
+from hubeau_data.models.pagination import PagedResponse
 from hubeau_data.models.piezometrie import (
     ChroniquePiezo,
     ChroniquePiezoTr,
@@ -52,10 +53,10 @@ def test_get_stations_mocked(httpx_mock: HTTPXMock) -> None:
     )
     client = HubeauClient()
     stations = client.piezometrie.get_stations()
-    assert isinstance(stations, list)
-    assert len(stations) == 1
-    assert isinstance(stations[0], StationPiezo)
-    assert stations[0].bss_id == "BSS001ABCD"
+    assert isinstance(stations, PagedResponse)
+    assert len(stations.data) == 1
+    assert isinstance(stations.data[0], StationPiezo)
+    assert stations.data[0].bss_id == "BSS001ABCD"
 
 
 def test_get_chroniques_mocked(httpx_mock: HTTPXMock) -> None:
@@ -70,10 +71,10 @@ def test_get_chroniques_mocked(httpx_mock: HTTPXMock) -> None:
     chroniques = client.piezometrie.get_chroniques(
         params=ChroniquePiezoParams(bss_id=["BSS001ABCD"], size=1)
     )
-    assert isinstance(chroniques, list)
-    assert len(chroniques) == 1
-    assert isinstance(chroniques[0], ChroniquePiezo)
-    assert chroniques[0].date_mesure == "2024-01-15"
+    assert isinstance(chroniques, PagedResponse)
+    assert len(chroniques.data) == 1
+    assert isinstance(chroniques.data[0], ChroniquePiezo)
+    assert chroniques.data[0].date_mesure == "2024-01-15"
 
 
 def test_get_chroniques_tr_mocked(httpx_mock: HTTPXMock) -> None:
@@ -88,10 +89,10 @@ def test_get_chroniques_tr_mocked(httpx_mock: HTTPXMock) -> None:
     chroniques = client.piezometrie.get_chroniques_tr(
         params=ChroniquePiezoTrParams(bss_id=["BSS001ABCD"], size=1)
     )
-    assert isinstance(chroniques, list)
-    assert len(chroniques) == 1
-    assert isinstance(chroniques[0], ChroniquePiezoTr)
-    assert chroniques[0].niveau_eau_ngf == 45.2
+    assert isinstance(chroniques, PagedResponse)
+    assert len(chroniques.data) == 1
+    assert isinstance(chroniques.data[0], ChroniquePiezoTr)
+    assert chroniques.data[0].niveau_eau_ngf == 45.2
 
 
 # ==============================================================================
@@ -107,9 +108,9 @@ def test_get_stations_live() -> None:
     stations = client.piezometrie.get_stations(
         params=StationPiezoParams(code_departement=["75"], size=1)
     )
-    assert isinstance(stations, list)
-    if stations:
-        assert isinstance(stations[0], StationPiezo)
+    assert isinstance(stations, PagedResponse)
+    if stations.data:
+        assert isinstance(stations.data[0], StationPiezo)
 
 
 @pytest.mark.live
@@ -120,14 +121,14 @@ def test_get_chroniques_live() -> None:
     stations = client.piezometrie.get_stations(
         params=StationPiezoParams(code_departement=["75"], size=1)
     )
-    if not stations or not stations[0].bss_id:
+    if not stations.data or not stations.data[0].bss_id:
         pytest.skip("No station available")
     chroniques = client.piezometrie.get_chroniques(
-        params=ChroniquePiezoParams(bss_id=[stations[0].bss_id], size=1)
+        params=ChroniquePiezoParams(bss_id=[stations.data[0].bss_id], size=1)
     )
-    assert isinstance(chroniques, list)
-    if chroniques:
-        assert isinstance(chroniques[0], ChroniquePiezo)
+    assert isinstance(chroniques, PagedResponse)
+    if chroniques.data:
+        assert isinstance(chroniques.data[0], ChroniquePiezo)
 
 
 @pytest.mark.live
@@ -141,11 +142,11 @@ def test_get_chroniques_tr_live() -> None:
     stations = client.piezometrie.get_stations(
         params=StationPiezoParams(code_departement=["75"], size=1)
     )
-    if not stations or not stations[0].bss_id:
+    if not stations.data or not stations.data[0].bss_id:
         pytest.skip("No station available")
     chroniques = client.piezometrie.get_chroniques_tr(
-        params=ChroniquePiezoTrParams(bss_id=[stations[0].bss_id], size=1)
+        params=ChroniquePiezoTrParams(bss_id=[stations.data[0].bss_id], size=1)
     )
-    assert isinstance(chroniques, list)
-    if chroniques:
-        assert isinstance(chroniques[0], ChroniquePiezoTr)
+    assert isinstance(chroniques, PagedResponse)
+    if chroniques.data:
+        assert isinstance(chroniques.data[0], ChroniquePiezoTr)

@@ -12,6 +12,7 @@ from hubeau_data.models.health import (
     EndpointStatus,
     HealthReport,
 )
+from hubeau_data.models.pagination import PagedResponse
 from hubeau_data.models.piezometrie import (
     ChroniquePiezo,
     ChroniquePiezoParams,
@@ -33,30 +34,45 @@ class PiezometrieAPI(HubeauBaseAPI):
 
     def get_stations(
         self, params: Optional[StationPiezoParams] = None
-    ) -> List[StationPiezo]:
+    ) -> PagedResponse[StationPiezo]:
         resp = self._get(
             f"{self.BASE_URL}/stations",
             params.model_dump(exclude_none=True) if params else None,
         )
-        return [StationPiezo(**item) for item in resp.json().get("data", [])]
+        body = resp.json()
+        return PagedResponse[StationPiezo](
+            count=body["count"],
+            data=[StationPiezo(**item) for item in body.get("data", [])],
+            next_cursor=self._extract_next_cursor(body.get("next")),
+        )
 
     def get_chroniques(
         self, params: Optional[ChroniquePiezoParams] = None
-    ) -> List[ChroniquePiezo]:
+    ) -> PagedResponse[ChroniquePiezo]:
         resp = self._get(
             f"{self.BASE_URL}/chroniques",
             params.model_dump(exclude_none=True) if params else None,
         )
-        return [ChroniquePiezo(**item) for item in resp.json().get("data", [])]
+        body = resp.json()
+        return PagedResponse[ChroniquePiezo](
+            count=body["count"],
+            data=[ChroniquePiezo(**item) for item in body.get("data", [])],
+            next_cursor=self._extract_next_cursor(body.get("next")),
+        )
 
     def get_chroniques_tr(
         self, params: Optional[ChroniquePiezoTrParams] = None
-    ) -> List[ChroniquePiezoTr]:
+    ) -> PagedResponse[ChroniquePiezoTr]:
         resp = self._get(
             f"{self.BASE_URL}/chroniques_tr",
             params.model_dump(exclude_none=True) if params else None,
         )
-        return [ChroniquePiezoTr(**item) for item in resp.json().get("data", [])]
+        body = resp.json()
+        return PagedResponse[ChroniquePiezoTr](
+            count=body["count"],
+            data=[ChroniquePiezoTr(**item) for item in body.get("data", [])],
+            next_cursor=self._extract_next_cursor(body.get("next")),
+        )
 
     def check_health(self, n_requests: int = 3) -> HealthReport:
         statuses: List[EndpointStatus] = []
@@ -107,14 +123,14 @@ class PiezometrieAPI(HubeauBaseAPI):
             station_ids = [bss_id]
             random_sample = False
         else:
-            stations = self.get_stations(
+            stations_page = self.get_stations(
                 params=StationPiezoParams(size=500 if random else n_stations)
             )
-            if random and len(stations) >= n_stations:
-                stations = random_module.sample(stations, n_stations)
+            if random and len(stations_page.data) >= n_stations:
+                station_list = random_module.sample(stations_page.data, n_stations)
             else:
-                stations = stations[:n_stations]
-            station_ids = [s.bss_id for s in stations if s.bss_id]
+                station_list = stations_page.data[:n_stations]
+            station_ids = [s.bss_id for s in station_list if s.bss_id]
             random_sample = random
         windows: List[DataWindow] = []
         for sid in station_ids:
