@@ -35,19 +35,31 @@ class HydrometrieAPI(HubeauBaseAPI):
         ("obs_elab", {"size": 1}),
     ]
 
-    def get_sites(self, params: Optional[SiteParams] = None) -> List[Site]:
+    def get_sites(self, params: Optional[SiteParams] = None) -> PagedResponse[Site]:
         resp = self._get(
             f"{self.BASE_URL}/referentiel/sites",
             params.model_dump(exclude_none=True) if params else None,
         )
-        return [Site(**item) for item in resp.json()["data"]]
+        body = resp.json()
+        return PagedResponse[Site](
+            count=body["count"],
+            data=[Site(**item) for item in body.get("data", [])],
+            next_cursor=self._extract_next_cursor(body.get("next")),
+        )
 
-    def get_stations(self, params: Optional[StationParams] = None) -> List[Station]:
+    def get_stations(
+        self, params: Optional[StationParams] = None
+    ) -> PagedResponse[Station]:
         resp = self._get(
             f"{self.BASE_URL}/referentiel/stations",
             params.model_dump(exclude_none=True) if params else None,
         )
-        return [Station(**item) for item in resp.json()["data"]]
+        body = resp.json()
+        return PagedResponse[Station](
+            count=body["count"],
+            data=[Station(**item) for item in body.get("data", [])],
+            next_cursor=self._extract_next_cursor(body.get("next")),
+        )
 
     def get_observations_tr(
         self, params: Optional[ObservationTrParams] = None
@@ -137,14 +149,14 @@ class HydrometrieAPI(HubeauBaseAPI):
             station_codes = [code_station]
             random_sample = False
         else:
-            stations = self.get_stations(
+            stations_page = self.get_stations(
                 params=StationParams(size=500 if random else n_stations)
             )
-            if random and len(stations) >= n_stations:
-                stations = random_module.sample(stations, n_stations)
+            if random and len(stations_page.data) >= n_stations:
+                station_list = random_module.sample(stations_page.data, n_stations)
             else:
-                stations = stations[:n_stations]
-            station_codes = [s.code_station for s in stations if s.code_station]
+                station_list = stations_page.data[:n_stations]
+            station_codes = [s.code_station for s in station_list if s.code_station]
             random_sample = random
 
         windows: List[DataWindow] = []

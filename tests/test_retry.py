@@ -44,8 +44,8 @@ def test_retry_on_503_succeeds_on_third_attempt(httpx_mock: HTTPXMock) -> None:
         )
         client = HubeauClient()
         sites = client.hydrometrie.get_sites()
-        assert len(sites) == 1
-        assert sites[0].code_site == "A1234567"
+        assert len(sites.data) == 1
+        assert sites.data[0].code_site == "A1234567"
 
 
 def test_retry_on_read_timeout_succeeds_on_third_attempt(httpx_mock: HTTPXMock) -> None:
@@ -60,7 +60,7 @@ def test_retry_on_read_timeout_succeeds_on_third_attempt(httpx_mock: HTTPXMock) 
         )
         client = HubeauClient()
         sites = client.hydrometrie.get_sites()
-        assert len(sites) == 1
+        assert len(sites.data) == 1
 
 
 def test_no_retry_on_404(httpx_mock: HTTPXMock) -> None:

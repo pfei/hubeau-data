@@ -77,10 +77,10 @@ def test_get_sites_mocked(httpx_mock: HTTPXMock) -> None:
     )
     client = HubeauClient()
     sites = client.hydrometrie.get_sites()
-    assert isinstance(sites, list)
-    assert len(sites) == 1
-    assert isinstance(sites[0], Site)
-    assert sites[0].code_site == "A1234567"
+    assert isinstance(sites, PagedResponse)
+    assert len(sites.data) == 1
+    assert isinstance(sites.data[0], Site)
+    assert sites.data[0].code_site == "A1234567"
 
 
 def test_get_stations_mocked(httpx_mock: HTTPXMock) -> None:
@@ -91,10 +91,10 @@ def test_get_stations_mocked(httpx_mock: HTTPXMock) -> None:
     )
     client = HubeauClient()
     stations = client.hydrometrie.get_stations()
-    assert isinstance(stations, list)
-    assert len(stations) == 1
-    assert isinstance(stations[0], Station)
-    assert stations[0].code_station == "A123456701"
+    assert isinstance(stations, PagedResponse)
+    assert len(stations.data) == 1
+    assert isinstance(stations.data[0], Station)
+    assert stations.data[0].code_station == "A123456701"
 
 
 def test_get_observations_tr_mocked(httpx_mock: HTTPXMock) -> None:
@@ -137,7 +137,7 @@ def test_station_model_validation() -> None:
     stations = HubeauClient().hydrometrie.get_stations(
         params=StationParams(code_commune_station="75056", size=1)
     )
-    for s in stations:
+    for s in stations.data:
         assert isinstance(s, Station)
 
 
@@ -148,7 +148,7 @@ def test_site_model_validation() -> None:
     sites = HubeauClient().hydrometrie.get_sites(
         params=SiteParams(code_departement=["95"], size=1)
     )
-    for s in sites:
+    for s in sites.data:
         assert isinstance(s, Site)
 
 
@@ -183,8 +183,8 @@ def test_get_sites_by_department_live() -> None:
     sites = HubeauClient().hydrometrie.get_sites(
         params=SiteParams(code_departement=["95"], size=1)
     )
-    assert len(sites) > 0
-    assert hasattr(sites[0], "libelle_site")
+    assert len(sites.data) > 0
+    assert hasattr(sites.data[0], "libelle_site")
 
 
 @pytest.mark.live
@@ -194,8 +194,8 @@ def test_get_stations_by_commune_live() -> None:
     stations = HubeauClient().hydrometrie.get_stations(
         params=StationParams(code_commune_station="75056", size=1)
     )
-    assert len(stations) > 0
-    assert hasattr(stations[0], "libelle_station")
+    assert len(stations.data) > 0
+    assert hasattr(stations.data[0], "libelle_station")
 
 
 @pytest.mark.live
