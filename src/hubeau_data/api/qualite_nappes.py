@@ -12,6 +12,7 @@ from hubeau_data.models.health import (
     EndpointStatus,
     HealthReport,
 )
+from hubeau_data.models.pagination import PagedResponse
 from hubeau_data.models.qualite_nappes import (
     AnalyseNappe,
     AnalyseNappeParams,
@@ -30,35 +31,31 @@ class QualiteNappesAPI(HubeauBaseAPI):
 
     def get_stations(
         self, params: Optional[StationNappeParams] = None
-    ) -> List[StationNappe]:
+    ) -> PagedResponse[StationNappe]:
         resp = self._get(
             f"{self.BASE_URL}/stations",
             params.model_dump(exclude_none=True) if params else None,
         )
-        return [StationNappe(**item) for item in resp.json().get("data", [])]
+        body = resp.json()
+        return PagedResponse[StationNappe](
+            count=body["count"],
+            data=[StationNappe(**item) for item in body.get("data", [])],
+            next_cursor=self._extract_next_cursor(body.get("next")),
+        )
 
     def get_analyses(
-        self,
-        params: Optional[AnalyseNappeParams] = None,
-        max_records: int = 1000,
-    ) -> List[AnalyseNappe]:
-        url = f"{self.BASE_URL}/analyses"
-        query_params = params.model_dump(exclude_none=True) if params else {}
-        page_size = int(query_params.get("size", 100))
-        query_params["size"] = page_size
-        results: List[AnalyseNappe] = []
-        page = 1
-        while len(results) < max_records:
-            query_params["page"] = page
-            resp = self._get(url, query_params)
-            data = resp.json().get("data", [])
-            if not data:
-                break
-            results.extend([AnalyseNappe(**item) for item in data])
-            if len(data) < page_size:
-                break
-            page += 1
-        return results[:max_records]
+        self, params: Optional[AnalyseNappeParams] = None
+    ) -> PagedResponse[AnalyseNappe]:
+        resp = self._get(
+            f"{self.BASE_URL}/analyses",
+            params.model_dump(exclude_none=True) if params else None,
+        )
+        body = resp.json()
+        return PagedResponse[AnalyseNappe](
+            count=body["count"],
+            data=[AnalyseNappe(**item) for item in body.get("data", [])],
+            next_cursor=self._extract_next_cursor(body.get("next")),
+        )
 
     def check_health(self, n_requests: int = 3) -> HealthReport:
         statuses: List[EndpointStatus] = []
@@ -109,14 +106,14 @@ class QualiteNappesAPI(HubeauBaseAPI):
             station_ids = [bss_id]
             random_sample = False
         else:
-            stations = self.get_stations(
+            stations_page = self.get_stations(
                 params=StationNappeParams(size=500 if random else n_stations)
             )
-            if random and len(stations) >= n_stations:
-                stations = random_module.sample(stations, n_stations)
+            if random and len(stations_page.data) >= n_stations:
+                station_list = random_module.sample(stations_page.data, n_stations)
             else:
-                stations = stations[:n_stations]
-            station_ids = [s.bss_id for s in stations if s.bss_id]
+                station_list = stations_page.data[:n_stations]
+            station_ids = [s.bss_id for s in station_list if s.bss_id]
             random_sample = random
         windows: List[DataWindow] = []
         for sid in station_ids:

@@ -11,6 +11,7 @@ import pytest
 from pytest_httpx import HTTPXMock
 
 from hubeau_data.client import HubeauClient
+from hubeau_data.models.pagination import PagedResponse
 from hubeau_data.models.qualite_nappes import AnalyseNappe, StationNappe
 
 
@@ -44,10 +45,10 @@ def test_get_stations_mocked(httpx_mock: HTTPXMock) -> None:
     )
     client = HubeauClient()
     stations = client.qualite_nappes.get_stations()
-    assert isinstance(stations, list)
-    assert len(stations) == 1
-    assert isinstance(stations[0], StationNappe)
-    assert stations[0].bss_id == "BSS000XUUM"
+    assert isinstance(stations, PagedResponse)
+    assert len(stations.data) == 1
+    assert isinstance(stations.data[0], StationNappe)
+    assert stations.data[0].bss_id == "BSS000XUUM"
 
 
 def test_get_analyses_mocked(httpx_mock: HTTPXMock) -> None:
@@ -61,12 +62,11 @@ def test_get_analyses_mocked(httpx_mock: HTTPXMock) -> None:
 
     analyses = client.qualite_nappes.get_analyses(
         params=AnalyseNappeParams(bss_id=["BSS000XUUM"], size=1),
-        max_records=1,
     )
-    assert isinstance(analyses, list)
-    assert len(analyses) == 1
-    assert isinstance(analyses[0], AnalyseNappe)
-    assert analyses[0].nom_param == "Nitrates"
+    assert isinstance(analyses, PagedResponse)
+    assert len(analyses.data) == 1
+    assert isinstance(analyses.data[0], AnalyseNappe)
+    assert analyses.data[0].nom_param == "Nitrates"
 
 
 # ==============================================================================
@@ -87,9 +87,9 @@ def test_get_stations_live() -> None:
     stations = client.qualite_nappes.get_stations(
         params=StationNappeParams(num_departement=["75"], size=1)
     )
-    assert isinstance(stations, list)
-    if stations:
-        assert isinstance(stations[0], StationNappe)
+    assert isinstance(stations, PagedResponse)
+    if stations.data:
+        assert isinstance(stations.data[0], StationNappe)
 
 
 @pytest.mark.live
@@ -105,12 +105,11 @@ def test_get_analyses_live() -> None:
     stations = client.qualite_nappes.get_stations(
         params=StationNappeParams(num_departement=["75"], size=1)
     )
-    if not stations or not stations[0].bss_id:
+    if not stations.data or not stations.data[0].bss_id:
         pytest.skip("No station available")
     analyses = client.qualite_nappes.get_analyses(
-        params=AnalyseNappeParams(bss_id=[stations[0].bss_id], size=1),
-        max_records=1,
+        params=AnalyseNappeParams(bss_id=[stations.data[0].bss_id], size=1),
     )
-    assert isinstance(analyses, list)
-    if analyses:
-        assert isinstance(analyses[0], AnalyseNappe)
+    assert isinstance(analyses, PagedResponse)
+    if analyses.data:
+        assert isinstance(analyses.data[0], AnalyseNappe)
