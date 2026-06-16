@@ -11,6 +11,7 @@ from hubeau_data.models.health import (
     EndpointStatus,
     HealthReport,
 )
+from hubeau_data.models.pagination import PagedResponse
 from hubeau_data.models.phytopharmaceutiques import (
     AchatProduit,
     AchatProduitParams,
@@ -37,39 +38,59 @@ class PhytopharmaceutiquesAPI(HubeauBaseAPI):
 
     def get_achats_substances(
         self, params: Optional[AchatSubstanceParams] = None
-    ) -> List[AchatSubstance]:
+    ) -> PagedResponse[AchatSubstance]:
         resp = self._get(
             f"{self.BASE_URL}/achats/substances",
             params.model_dump(exclude_none=True) if params else _DEFAULT_PARAMS,
         )
-        return [AchatSubstance(**item) for item in resp.json().get("data", [])]
+        body = resp.json()
+        return PagedResponse[AchatSubstance](
+            count=body["count"],
+            data=[AchatSubstance(**item) for item in body.get("data", [])],
+            next_cursor=self._extract_next_cursor(body.get("next")),
+        )
 
     def get_achats_produits(
         self, params: Optional[AchatProduitParams] = None
-    ) -> List[AchatProduit]:
+    ) -> PagedResponse[AchatProduit]:
         resp = self._get(
             f"{self.BASE_URL}/achats/produits",
             params.model_dump(exclude_none=True) if params else _DEFAULT_PARAMS,
         )
-        return [AchatProduit(**item) for item in resp.json().get("data", [])]
+        body = resp.json()
+        return PagedResponse[AchatProduit](
+            count=body["count"],
+            data=[AchatProduit(**item) for item in body.get("data", [])],
+            next_cursor=self._extract_next_cursor(body.get("next")),
+        )
 
     def get_ventes_substances(
         self, params: Optional[VenteSubstanceParams] = None
-    ) -> List[VenteSubstance]:
+    ) -> PagedResponse[VenteSubstance]:
         resp = self._get(
             f"{self.BASE_URL}/ventes/substances",
             params.model_dump(exclude_none=True) if params else _DEFAULT_PARAMS,
         )
-        return [VenteSubstance(**item) for item in resp.json().get("data", [])]
+        body = resp.json()
+        return PagedResponse[VenteSubstance](
+            count=body["count"],
+            data=[VenteSubstance(**item) for item in body.get("data", [])],
+            next_cursor=self._extract_next_cursor(body.get("next")),
+        )
 
     def get_ventes_produits(
         self, params: Optional[VenteProduitParams] = None
-    ) -> List[VenteProduit]:
+    ) -> PagedResponse[VenteProduit]:
         resp = self._get(
             f"{self.BASE_URL}/ventes/produits",
             params.model_dump(exclude_none=True) if params else _DEFAULT_PARAMS,
         )
-        return [VenteProduit(**item) for item in resp.json().get("data", [])]
+        body = resp.json()
+        return PagedResponse[VenteProduit](
+            count=body["count"],
+            data=[VenteProduit(**item) for item in body.get("data", [])],
+            next_cursor=self._extract_next_cursor(body.get("next")),
+        )
 
     def check_health(self, n_requests: int = 3) -> HealthReport:
         statuses: List[EndpointStatus] = []

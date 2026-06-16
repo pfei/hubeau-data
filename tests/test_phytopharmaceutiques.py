@@ -10,6 +10,7 @@ import pytest
 from pytest_httpx import HTTPXMock
 
 from hubeau_data.client import HubeauClient
+from hubeau_data.models.pagination import PagedResponse
 from hubeau_data.models.phytopharmaceutiques import (
     AchatProduit,
     AchatSubstance,
@@ -65,10 +66,10 @@ def test_get_achats_substances_mocked(httpx_mock: HTTPXMock) -> None:
     )
     client = HubeauClient()
     resultats = client.phytopharmaceutiques.get_achats_substances()
-    assert isinstance(resultats, list)
-    assert len(resultats) == 1
-    assert isinstance(resultats[0], AchatSubstance)
-    assert resultats[0].libelle_substance == "Glyphosate"
+    assert isinstance(resultats, PagedResponse)
+    assert len(resultats.data) == 1
+    assert isinstance(resultats.data[0], AchatSubstance)
+    assert resultats.data[0].libelle_substance == "Glyphosate"
 
 
 def test_get_achats_produits_mocked(httpx_mock: HTTPXMock) -> None:
@@ -79,10 +80,10 @@ def test_get_achats_produits_mocked(httpx_mock: HTTPXMock) -> None:
     )
     client = HubeauClient()
     resultats = client.phytopharmaceutiques.get_achats_produits()
-    assert isinstance(resultats, list)
-    assert len(resultats) == 1
-    assert isinstance(resultats[0], AchatProduit)
-    assert resultats[0].unite == "kg"
+    assert isinstance(resultats, PagedResponse)
+    assert len(resultats.data) == 1
+    assert isinstance(resultats.data[0], AchatProduit)
+    assert resultats.data[0].unite == "kg"
 
 
 def test_get_ventes_substances_mocked(httpx_mock: HTTPXMock) -> None:
@@ -93,10 +94,10 @@ def test_get_ventes_substances_mocked(httpx_mock: HTTPXMock) -> None:
     )
     client = HubeauClient()
     resultats = client.phytopharmaceutiques.get_ventes_substances()
-    assert isinstance(resultats, list)
-    assert len(resultats) == 1
-    assert isinstance(resultats[0], VenteSubstance)
-    assert resultats[0].libelle_substance == "Glyphosate"
+    assert isinstance(resultats, PagedResponse)
+    assert len(resultats.data) == 1
+    assert isinstance(resultats.data[0], VenteSubstance)
+    assert resultats.data[0].libelle_substance == "Glyphosate"
 
 
 def test_get_ventes_produits_mocked(httpx_mock: HTTPXMock) -> None:
@@ -107,10 +108,10 @@ def test_get_ventes_produits_mocked(httpx_mock: HTTPXMock) -> None:
     )
     client = HubeauClient()
     resultats = client.phytopharmaceutiques.get_ventes_produits()
-    assert isinstance(resultats, list)
-    assert len(resultats) == 1
-    assert isinstance(resultats[0], VenteProduit)
-    assert resultats[0].annee == 2022
+    assert isinstance(resultats, PagedResponse)
+    assert len(resultats.data) == 1
+    assert isinstance(resultats.data[0], VenteProduit)
+    assert resultats.data[0].annee == 2022
 
 
 # ==============================================================================
@@ -125,9 +126,9 @@ def test_get_achats_substances_live() -> None:
     resultats = HubeauClient().phytopharmaceutiques.get_achats_substances(
         params=AchatSubstanceParams(type_territoire="National", size=1)
     )
-    assert isinstance(resultats, list)
-    if resultats:
-        assert isinstance(resultats[0], AchatSubstance)
+    assert isinstance(resultats, PagedResponse)
+    if resultats.data:
+        assert isinstance(resultats.data[0], AchatSubstance)
 
 
 @pytest.mark.live
@@ -137,6 +138,6 @@ def test_get_ventes_substances_live() -> None:
     resultats = HubeauClient().phytopharmaceutiques.get_ventes_substances(
         params=VenteSubstanceParams(type_territoire="National", size=1)
     )
-    assert isinstance(resultats, list)
-    if resultats:
-        assert isinstance(resultats[0], VenteSubstance)
+    assert isinstance(resultats, PagedResponse)
+    if resultats.data:
+        assert isinstance(resultats.data[0], VenteSubstance)
