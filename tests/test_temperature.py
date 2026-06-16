@@ -11,6 +11,7 @@ import pytest
 from pytest_httpx import HTTPXMock
 
 from hubeau_data.client import HubeauClient
+from hubeau_data.models.pagination import PagedResponse
 from hubeau_data.models.temperature import ChroniqueTemperature, StationTemperature
 
 
@@ -41,10 +42,10 @@ def test_get_stations_mocked(httpx_mock: HTTPXMock) -> None:
     )
     client = HubeauClient()
     stations = client.temperature.get_stations()
-    assert isinstance(stations, list)
-    assert len(stations) == 1
-    assert isinstance(stations[0], StationTemperature)
-    assert stations[0].code_station == "04001000"
+    assert isinstance(stations, PagedResponse)
+    assert len(stations.data) == 1
+    assert isinstance(stations.data[0], StationTemperature)
+    assert stations.data[0].code_station == "04001000"
 
 
 def test_get_chronique_mocked(httpx_mock: HTTPXMock) -> None:
@@ -59,10 +60,10 @@ def test_get_chronique_mocked(httpx_mock: HTTPXMock) -> None:
     chronique = client.temperature.get_chronique(
         params=ChroniqueTemperatureParams(code_station=["04001000"], size=1)
     )
-    assert isinstance(chronique, list)
-    assert len(chronique) == 1
-    assert isinstance(chronique[0], ChroniqueTemperature)
-    assert chronique[0].resultat == 18.5
+    assert isinstance(chronique, PagedResponse)
+    assert len(chronique.data) == 1
+    assert isinstance(chronique.data[0], ChroniqueTemperature)
+    assert chronique.data[0].resultat == 18.5
 
 
 # ==============================================================================
@@ -77,9 +78,9 @@ def test_get_stations_live() -> None:
     stations = HubeauClient().temperature.get_stations(
         params=StationTemperatureParams(code_departement=["01"], size=1)
     )
-    assert isinstance(stations, list)
-    if stations:
-        assert isinstance(stations[0], StationTemperature)
+    assert isinstance(stations, PagedResponse)
+    if stations.data:
+        assert isinstance(stations.data[0], StationTemperature)
 
 
 @pytest.mark.live
@@ -97,13 +98,13 @@ def test_get_chronique_live() -> None:
     stations = HubeauClient().temperature.get_stations(
         params=StationTemperatureParams(code_departement=["01"], size=1)
     )
-    if not stations or not stations[0].code_station:
+    if not stations.data or not stations.data[0].code_station:
         pytest.skip("No station available")
     chronique = HubeauClient().temperature.get_chronique(
         params=ChroniqueTemperatureParams(
-            code_station=[stations[0].code_station], size=1
+            code_station=[stations.data[0].code_station], size=1
         )
     )
-    assert isinstance(chronique, list)
-    if chronique:
-        assert isinstance(chronique[0], ChroniqueTemperature)
+    assert isinstance(chronique, PagedResponse)
+    if chronique.data:
+        assert isinstance(chronique.data[0], ChroniqueTemperature)
