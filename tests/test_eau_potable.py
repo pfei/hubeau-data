@@ -11,6 +11,7 @@ from pytest_httpx import HTTPXMock
 
 from hubeau_data.client import HubeauClient
 from hubeau_data.models.eau_potable import CommuneUdi, ResultatEauPotable
+from hubeau_data.models.pagination import PagedResponse
 
 
 @pytest.fixture(autouse=True, scope="session")
@@ -50,10 +51,10 @@ def test_get_communes_udi_mocked(httpx_mock: HTTPXMock) -> None:
     )
     client = HubeauClient()
     communes = client.eau_potable.get_communes_udi()
-    assert isinstance(communes, list)
-    assert len(communes) == 1
-    assert isinstance(communes[0], CommuneUdi)
-    assert communes[0].code_commune == "75056"
+    assert isinstance(communes, PagedResponse)
+    assert len(communes.data) == 1
+    assert isinstance(communes.data[0], CommuneUdi)
+    assert communes.data[0].code_commune == "75056"
 
 
 def test_get_resultats_dis_mocked(httpx_mock: HTTPXMock) -> None:
@@ -68,10 +69,10 @@ def test_get_resultats_dis_mocked(httpx_mock: HTTPXMock) -> None:
     resultats = client.eau_potable.get_resultats_dis(
         params=ResultatEauPotableParams(code_commune=["75056"], size=1)
     )
-    assert isinstance(resultats, list)
-    assert len(resultats) == 1
-    assert isinstance(resultats[0], ResultatEauPotable)
-    assert resultats[0].libelle_parametre == "Nitrates"
+    assert isinstance(resultats, PagedResponse)
+    assert len(resultats.data) == 1
+    assert isinstance(resultats.data[0], ResultatEauPotable)
+    assert resultats.data[0].libelle_parametre == "Nitrates"
 
 
 # ==============================================================================
@@ -86,9 +87,9 @@ def test_get_communes_udi_live() -> None:
     communes = HubeauClient().eau_potable.get_communes_udi(
         params=CommuneUdiParams(code_commune=["75056"], size=1)
     )
-    assert isinstance(communes, list)
-    if communes:
-        assert isinstance(communes[0], CommuneUdi)
+    assert isinstance(communes, PagedResponse)
+    if communes.data:
+        assert isinstance(communes.data[0], CommuneUdi)
 
 
 @pytest.mark.live
@@ -98,6 +99,6 @@ def test_get_resultats_dis_live() -> None:
     resultats = HubeauClient().eau_potable.get_resultats_dis(
         params=ResultatEauPotableParams(code_commune=["75056"], size=1)
     )
-    assert isinstance(resultats, list)
-    if resultats:
-        assert isinstance(resultats[0], ResultatEauPotable)
+    assert isinstance(resultats, PagedResponse)
+    if resultats.data:
+        assert isinstance(resultats.data[0], ResultatEauPotable)

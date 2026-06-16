@@ -18,6 +18,7 @@ from hubeau_data.models.health import (
     EndpointStatus,
     HealthReport,
 )
+from hubeau_data.models.pagination import PagedResponse
 
 
 class EauPotableAPI(HubeauBaseAPI):
@@ -30,21 +31,31 @@ class EauPotableAPI(HubeauBaseAPI):
 
     def get_communes_udi(
         self, params: Optional[CommuneUdiParams] = None
-    ) -> List[CommuneUdi]:
+    ) -> PagedResponse[CommuneUdi]:
         resp = self._get(
             f"{self.BASE_URL}/communes_udi",
             params.model_dump(exclude_none=True) if params else None,
         )
-        return [CommuneUdi(**item) for item in resp.json().get("data", [])]
+        body = resp.json()
+        return PagedResponse[CommuneUdi](
+            count=body["count"],
+            data=[CommuneUdi(**item) for item in body.get("data", [])],
+            next_cursor=self._extract_next_cursor(body.get("next")),
+        )
 
     def get_resultats_dis(
         self, params: Optional[ResultatEauPotableParams] = None
-    ) -> List[ResultatEauPotable]:
+    ) -> PagedResponse[ResultatEauPotable]:
         resp = self._get(
             f"{self.BASE_URL}/resultats_dis",
             params.model_dump(exclude_none=True) if params else None,
         )
-        return [ResultatEauPotable(**item) for item in resp.json().get("data", [])]
+        body = resp.json()
+        return PagedResponse[ResultatEauPotable](
+            count=body["count"],
+            data=[ResultatEauPotable(**item) for item in body.get("data", [])],
+            next_cursor=self._extract_next_cursor(body.get("next")),
+        )
 
     def check_health(self, n_requests: int = 3) -> HealthReport:
         statuses: List[EndpointStatus] = []
@@ -95,14 +106,14 @@ class EauPotableAPI(HubeauBaseAPI):
             commune_codes = [code_commune]
             random_sample = False
         else:
-            communes = self.get_communes_udi(
+            communes_page = self.get_communes_udi(
                 params=CommuneUdiParams(size=500 if random else n_communes)
             )
-            if random and len(communes) >= n_communes:
-                communes = random_module.sample(communes, n_communes)
+            if random and len(communes_page.data) >= n_communes:
+                commune_list = random_module.sample(communes_page.data, n_communes)
             else:
-                communes = communes[:n_communes]
-            commune_codes = [c.code_commune for c in communes if c.code_commune]
+                commune_list = communes_page.data[:n_communes]
+            commune_codes = [c.code_commune for c in commune_list if c.code_commune]
             random_sample = random
         windows: List[DataWindow] = []
         for code in commune_codes:
