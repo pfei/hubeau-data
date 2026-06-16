@@ -21,8 +21,8 @@ async def test_async_qualite_rivieres(httpx_mock: HTTPXMock) -> None:
     )
     async with AsyncHubeauClient() as client:
         stations = await client.qualite_rivieres.get_stations()
-    assert len(stations) == 1
-    assert stations[0].code_station == "01000001"
+    assert len(stations.data) == 1
+    assert stations.data[0].code_station == "01000001"
 
 
 @pytest.mark.anyio
@@ -34,8 +34,8 @@ async def test_async_piezometrie(httpx_mock: HTTPXMock) -> None:
     )
     async with AsyncHubeauClient() as client:
         stations = await client.piezometrie.get_stations()
-    assert len(stations) == 1
-    assert stations[0].bss_id == "BSS001ABCD"
+    assert len(stations.data) == 1
+    assert stations.data[0].bss_id == "BSS001ABCD"
 
 
 @pytest.mark.anyio
@@ -47,7 +47,7 @@ async def test_async_qualite_nappes(httpx_mock: HTTPXMock) -> None:
     )
     async with AsyncHubeauClient() as client:
         stations = await client.qualite_nappes.get_stations()
-    assert len(stations) == 1
+    assert len(stations.data) == 1
 
 
 @pytest.mark.anyio
@@ -59,7 +59,7 @@ async def test_async_ecoulement(httpx_mock: HTTPXMock) -> None:
     )
     async with AsyncHubeauClient() as client:
         stations = await client.ecoulement.get_stations()
-    assert len(stations) == 1
+    assert len(stations.data) == 1
 
 
 @pytest.mark.anyio
@@ -71,7 +71,7 @@ async def test_async_temperature(httpx_mock: HTTPXMock) -> None:
     )
     async with AsyncHubeauClient() as client:
         stations = await client.temperature.get_stations()
-    assert len(stations) == 1
+    assert len(stations.data) == 1
 
 
 @pytest.mark.anyio
@@ -83,7 +83,7 @@ async def test_async_prelevements(httpx_mock: HTTPXMock) -> None:
     )
     async with AsyncHubeauClient() as client:
         ouvrages = await client.prelevements.get_ouvrages()
-    assert len(ouvrages) == 1
+    assert len(ouvrages.data) == 1
 
 
 @pytest.mark.anyio
@@ -95,7 +95,7 @@ async def test_async_hydrobiologie(httpx_mock: HTTPXMock) -> None:
     )
     async with AsyncHubeauClient() as client:
         stations = await client.hydrobiologie.get_stations()
-    assert len(stations) == 1
+    assert len(stations.data) == 1
 
 
 @pytest.mark.anyio
@@ -107,7 +107,7 @@ async def test_async_poisson(httpx_mock: HTTPXMock) -> None:
     )
     async with AsyncHubeauClient() as client:
         stations = await client.poisson.get_stations()
-    assert len(stations) == 1
+    assert len(stations.data) == 1
 
 
 @pytest.mark.anyio
@@ -119,7 +119,7 @@ async def test_async_eau_potable(httpx_mock: HTTPXMock) -> None:
     )
     async with AsyncHubeauClient() as client:
         communes = await client.eau_potable.get_communes_udi()
-    assert len(communes) == 1
+    assert len(communes.data) == 1
 
 
 @pytest.mark.anyio
@@ -131,4 +131,4 @@ async def test_async_phytopharmaceutiques(httpx_mock: HTTPXMock) -> None:
     )
     async with AsyncHubeauClient() as client:
         resultats = await client.phytopharmaceutiques.get_achats_substances()
-    assert len(resultats) == 1
+    assert len(resultats.data) == 1

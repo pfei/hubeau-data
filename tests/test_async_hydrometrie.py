@@ -12,6 +12,7 @@ from pytest_httpx import HTTPXMock
 
 from hubeau_data.async_client import AsyncHubeauClient
 from hubeau_data.models.hydrometrie import ObservationTrParams, Site, SiteParams
+from hubeau_data.models.pagination import PagedResponse
 
 MINIMAL_SITE = {
     "code_site": "A1234567",
@@ -41,10 +42,10 @@ async def test_get_sites_mocked(httpx_mock: HTTPXMock) -> None:
     )
     async with AsyncHubeauClient() as client:
         sites = await client.hydrometrie.get_sites()
-    assert isinstance(sites, list)
-    assert len(sites) == 1
-    assert isinstance(sites[0], Site)
-    assert sites[0].code_site == "A1234567"
+    assert isinstance(sites, PagedResponse)
+    assert len(sites.data) == 1
+    assert isinstance(sites.data[0], Site)
+    assert sites.data[0].code_site == "A1234567"
 
 
 # ==============================================================================
@@ -59,7 +60,7 @@ async def test_get_sites_live() -> None:
         sites = await client.hydrometrie.get_sites(
             params=SiteParams(code_departement=["75"], size=1)
         )
-    assert isinstance(sites, list)
+    assert isinstance(sites, PagedResponse)
 
 
 @pytest.mark.live
@@ -77,4 +78,4 @@ async def test_parallel_fetch_live() -> None:
         results = await asyncio.gather(*tasks)
     assert len(results) == 2
     for obs in results:
-        assert isinstance(obs, list)
+        assert isinstance(obs, PagedResponse)

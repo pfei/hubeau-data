@@ -1,6 +1,7 @@
-from typing import List, Optional
+from typing import Optional
 
 from hubeau_data.async_base import AsyncHubeauBaseAPI
+from hubeau_data.models.pagination import PagedResponse
 from hubeau_data.models.phytopharmaceutiques import (
     AchatProduit,
     AchatProduitParams,
@@ -11,6 +12,7 @@ from hubeau_data.models.phytopharmaceutiques import (
     VenteSubstance,
     VenteSubstanceParams,
 )
+from hubeau_data.utils import extract_next_cursor
 
 _DEFAULT_PARAMS = {"type_territoire": "National"}
 
@@ -20,36 +22,56 @@ class AsyncPhytopharmaceutiquesAPI(AsyncHubeauBaseAPI):
 
     async def get_achats_substances(
         self, params: Optional[AchatSubstanceParams] = None
-    ) -> List[AchatSubstance]:
+    ) -> PagedResponse[AchatSubstance]:
         resp = await self._get(
             f"{self.BASE_URL}/achats/substances",
             params.model_dump(exclude_none=True) if params else _DEFAULT_PARAMS,
         )
-        return [AchatSubstance(**item) for item in resp.json().get("data", [])]
+        body = resp.json()
+        return PagedResponse[AchatSubstance](
+            count=body["count"],
+            data=[AchatSubstance(**item) for item in body.get("data", [])],
+            next_cursor=extract_next_cursor(body.get("next")),
+        )
 
     async def get_achats_produits(
         self, params: Optional[AchatProduitParams] = None
-    ) -> List[AchatProduit]:
+    ) -> PagedResponse[AchatProduit]:
         resp = await self._get(
             f"{self.BASE_URL}/achats/produits",
             params.model_dump(exclude_none=True) if params else _DEFAULT_PARAMS,
         )
-        return [AchatProduit(**item) for item in resp.json().get("data", [])]
+        body = resp.json()
+        return PagedResponse[AchatProduit](
+            count=body["count"],
+            data=[AchatProduit(**item) for item in body.get("data", [])],
+            next_cursor=extract_next_cursor(body.get("next")),
+        )
 
     async def get_ventes_substances(
         self, params: Optional[VenteSubstanceParams] = None
-    ) -> List[VenteSubstance]:
+    ) -> PagedResponse[VenteSubstance]:
         resp = await self._get(
             f"{self.BASE_URL}/ventes/substances",
             params.model_dump(exclude_none=True) if params else _DEFAULT_PARAMS,
         )
-        return [VenteSubstance(**item) for item in resp.json().get("data", [])]
+        body = resp.json()
+        return PagedResponse[VenteSubstance](
+            count=body["count"],
+            data=[VenteSubstance(**item) for item in body.get("data", [])],
+            next_cursor=extract_next_cursor(body.get("next")),
+        )
 
     async def get_ventes_produits(
         self, params: Optional[VenteProduitParams] = None
-    ) -> List[VenteProduit]:
+    ) -> PagedResponse[VenteProduit]:
         resp = await self._get(
             f"{self.BASE_URL}/ventes/produits",
             params.model_dump(exclude_none=True) if params else _DEFAULT_PARAMS,
         )
-        return [VenteProduit(**item) for item in resp.json().get("data", [])]
+        body = resp.json()
+        return PagedResponse[VenteProduit](
+            count=body["count"],
+            data=[VenteProduit(**item) for item in body.get("data", [])],
+            next_cursor=extract_next_cursor(body.get("next")),
+        )

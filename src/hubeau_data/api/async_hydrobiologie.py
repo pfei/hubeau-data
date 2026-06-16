@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Optional
 
 from hubeau_data.async_base import AsyncHubeauBaseAPI
 from hubeau_data.models.hydrobiologie import (
@@ -9,6 +9,8 @@ from hubeau_data.models.hydrobiologie import (
     TaxonHydrobio,
     TaxonHydrobioParams,
 )
+from hubeau_data.models.pagination import PagedResponse
+from hubeau_data.utils import extract_next_cursor
 
 
 class AsyncHydrobiologieAPI(AsyncHubeauBaseAPI):
@@ -16,27 +18,42 @@ class AsyncHydrobiologieAPI(AsyncHubeauBaseAPI):
 
     async def get_stations(
         self, params: Optional[StationHydrobioParams] = None
-    ) -> List[StationHydrobio]:
+    ) -> PagedResponse[StationHydrobio]:
         resp = await self._get(
             f"{self.BASE_URL}/stations_hydrobio",
             params.model_dump(exclude_none=True) if params else None,
         )
-        return [StationHydrobio(**item) for item in resp.json().get("data", [])]
+        body = resp.json()
+        return PagedResponse[StationHydrobio](
+            count=body["count"],
+            data=[StationHydrobio(**item) for item in body.get("data", [])],
+            next_cursor=extract_next_cursor(body.get("next")),
+        )
 
     async def get_indices(
         self, params: Optional[IndiceHydrobioParams] = None
-    ) -> List[IndiceHydrobio]:
+    ) -> PagedResponse[IndiceHydrobio]:
         resp = await self._get(
             f"{self.BASE_URL}/indices",
             params.model_dump(exclude_none=True) if params else None,
         )
-        return [IndiceHydrobio(**item) for item in resp.json().get("data", [])]
+        body = resp.json()
+        return PagedResponse[IndiceHydrobio](
+            count=body["count"],
+            data=[IndiceHydrobio(**item) for item in body.get("data", [])],
+            next_cursor=extract_next_cursor(body.get("next")),
+        )
 
     async def get_taxons(
         self, params: Optional[TaxonHydrobioParams] = None
-    ) -> List[TaxonHydrobio]:
+    ) -> PagedResponse[TaxonHydrobio]:
         resp = await self._get(
             f"{self.BASE_URL}/taxons",
             params.model_dump(exclude_none=True) if params else None,
         )
-        return [TaxonHydrobio(**item) for item in resp.json().get("data", [])]
+        body = resp.json()
+        return PagedResponse[TaxonHydrobio](
+            count=body["count"],
+            data=[TaxonHydrobio(**item) for item in body.get("data", [])],
+            next_cursor=extract_next_cursor(body.get("next")),
+        )

@@ -1,6 +1,7 @@
-from typing import List, Optional
+from typing import Optional
 
 from hubeau_data.async_base import AsyncHubeauBaseAPI
+from hubeau_data.models.pagination import PagedResponse
 from hubeau_data.models.piezometrie import (
     ChroniquePiezo,
     ChroniquePiezoParams,
@@ -9,6 +10,7 @@ from hubeau_data.models.piezometrie import (
     StationPiezo,
     StationPiezoParams,
 )
+from hubeau_data.utils import extract_next_cursor
 
 
 class AsyncPiezometrieAPI(AsyncHubeauBaseAPI):
@@ -16,27 +18,42 @@ class AsyncPiezometrieAPI(AsyncHubeauBaseAPI):
 
     async def get_stations(
         self, params: Optional[StationPiezoParams] = None
-    ) -> List[StationPiezo]:
+    ) -> PagedResponse[StationPiezo]:
         resp = await self._get(
             f"{self.BASE_URL}/stations",
             params.model_dump(exclude_none=True) if params else None,
         )
-        return [StationPiezo(**item) for item in resp.json().get("data", [])]
+        body = resp.json()
+        return PagedResponse[StationPiezo](
+            count=body["count"],
+            data=[StationPiezo(**item) for item in body.get("data", [])],
+            next_cursor=extract_next_cursor(body.get("next")),
+        )
 
     async def get_chroniques(
         self, params: Optional[ChroniquePiezoParams] = None
-    ) -> List[ChroniquePiezo]:
+    ) -> PagedResponse[ChroniquePiezo]:
         resp = await self._get(
             f"{self.BASE_URL}/chroniques",
             params.model_dump(exclude_none=True) if params else None,
         )
-        return [ChroniquePiezo(**item) for item in resp.json().get("data", [])]
+        body = resp.json()
+        return PagedResponse[ChroniquePiezo](
+            count=body["count"],
+            data=[ChroniquePiezo(**item) for item in body.get("data", [])],
+            next_cursor=extract_next_cursor(body.get("next")),
+        )
 
     async def get_chroniques_tr(
         self, params: Optional[ChroniquePiezoTrParams] = None
-    ) -> List[ChroniquePiezoTr]:
+    ) -> PagedResponse[ChroniquePiezoTr]:
         resp = await self._get(
             f"{self.BASE_URL}/chroniques_tr",
             params.model_dump(exclude_none=True) if params else None,
         )
-        return [ChroniquePiezoTr(**item) for item in resp.json().get("data", [])]
+        body = resp.json()
+        return PagedResponse[ChroniquePiezoTr](
+            count=body["count"],
+            data=[ChroniquePiezoTr(**item) for item in body.get("data", [])],
+            next_cursor=extract_next_cursor(body.get("next")),
+        )
