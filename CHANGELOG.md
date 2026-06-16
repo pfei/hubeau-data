@@ -6,6 +6,40 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-06-15
+
+### Changed — Breaking
+
+- **All `get_*` methods now return `PagedResponse[T]` instead of `List[T]`.**
+  `PagedResponse` exposes three fields:
+
+  - `data: list[T]` — the records for this page
+  - `count: int` — total records available server-side
+  - `next_cursor: str | None` — pass as `cursor=` (or `page=`) param to fetch the next page
+
+  Migration: replace `result[0]` with `result.data[0]`, `len(result)` with `len(result.data)`,
+  and `for item in result` with `for item in result.data`.
+
+- **`hydrometrie` `ObservationTrParams` and `ObsElabParams`**: `code_station`/`code_site`
+  replaced by `code_entite` (fix carried over from 0.1.0 — see below).
+
+- **`qualite_nappes` and `qualite_rivieres`**: removed the ad-hoc `max_records`/`page`
+  loop in `get_analyses()`. Pagination is now handled uniformly via `next_cursor`.
+
+### Added
+
+- `PagedResponse[T]` generic Pydantic model (`hubeau_data.models.pagination`).
+- `extract_next_cursor(next_url)` utility function (`hubeau_data.utils`) — detects
+  cursor-based and page-based pagination from Hub'Eau `next` URLs.
+
+### Fixed
+
+- `hydrometrie` `ObservationTrParams`/`ObsElabParams`: the correct Hub'Eau query
+  parameter is `code_entite`, not `code_station` or `code_site`. The previous names
+  were silently ignored by the API, returning unfiltered global results.
+  Audited `qualite_rivieres`, `ecoulement`, `poisson`, `temperature` — all correctly
+  use `code_station` for their respective endpoints, no changes needed.
+
 ## [0.1.0] - 2026-06-13
 
 ### Fixed
