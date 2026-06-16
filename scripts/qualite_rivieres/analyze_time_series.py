@@ -48,7 +48,7 @@ def fetch_station_sample(n: int) -> list[StationPc]:
     """Fetch a sample of stations from the API."""
     return client.qualite_rivieres.get_stations(
         params=StationPcParams(size=n, sort="asc")
-    )
+    ).data
 
 
 def stream_analyses(

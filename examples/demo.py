@@ -32,8 +32,8 @@ def run_demo() -> None:
             params=StationPcParams(code_departement=["75"], size=3)
         )
 
-        print(f"✓ Found {len(stations_qr)} stations in Paris area.")
-        for i, station in enumerate(stations_qr, 1):
+        print(f"✓ Found {len(stations_qr.data)} stations in Paris area.")
+        for i, station in enumerate(stations_qr.data, 1):
             print(
                 f"  -> Station #{i}: {station.code_station} - {station.libelle_station}"
             )
