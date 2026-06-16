@@ -11,6 +11,7 @@ import pytest
 from pytest_httpx import HTTPXMock
 
 from hubeau_data.client import HubeauClient
+from hubeau_data.models.pagination import PagedResponse
 from hubeau_data.models.prelevements import (
     ChroniquePrelevement,
     OuvragePrelevement,
@@ -47,10 +48,10 @@ def test_get_ouvrages_mocked(httpx_mock: HTTPXMock) -> None:
     )
     client = HubeauClient()
     ouvrages = client.prelevements.get_ouvrages()
-    assert isinstance(ouvrages, list)
-    assert len(ouvrages) == 1
-    assert isinstance(ouvrages[0], OuvragePrelevement)
-    assert ouvrages[0].code_ouvrage == "OPR0000000001"
+    assert isinstance(ouvrages, PagedResponse)
+    assert len(ouvrages.data) == 1
+    assert isinstance(ouvrages.data[0], OuvragePrelevement)
+    assert ouvrages.data[0].code_ouvrage == "OPR0000000001"
 
 
 def test_get_points_prelevement_mocked(httpx_mock: HTTPXMock) -> None:
@@ -61,10 +62,10 @@ def test_get_points_prelevement_mocked(httpx_mock: HTTPXMock) -> None:
     )
     client = HubeauClient()
     points = client.prelevements.get_points_prelevement()
-    assert isinstance(points, list)
-    assert len(points) == 1
-    assert isinstance(points[0], PointPrelevement)
-    assert points[0].code_point_prelevement == "PTP000000000000001"
+    assert isinstance(points, PagedResponse)
+    assert len(points.data) == 1
+    assert isinstance(points.data[0], PointPrelevement)
+    assert points.data[0].code_point_prelevement == "PTP000000000000001"
 
 
 def test_get_chroniques_mocked(httpx_mock: HTTPXMock) -> None:
@@ -79,10 +80,10 @@ def test_get_chroniques_mocked(httpx_mock: HTTPXMock) -> None:
     chroniques = client.prelevements.get_chroniques(
         params=ChroniquePrelevementParams(code_ouvrage=["OPR0000000001"], size=1)
     )
-    assert isinstance(chroniques, list)
-    assert len(chroniques) == 1
-    assert isinstance(chroniques[0], ChroniquePrelevement)
-    assert chroniques[0].annee == 2022
+    assert isinstance(chroniques, PagedResponse)
+    assert len(chroniques.data) == 1
+    assert isinstance(chroniques.data[0], ChroniquePrelevement)
+    assert chroniques.data[0].annee == 2022
 
 
 # ==============================================================================
@@ -97,9 +98,9 @@ def test_get_ouvrages_live() -> None:
     ouvrages = HubeauClient().prelevements.get_ouvrages(
         params=OuvrageParams(code_departement=["75"], size=1)
     )
-    assert isinstance(ouvrages, list)
-    if ouvrages:
-        assert isinstance(ouvrages[0], OuvragePrelevement)
+    assert isinstance(ouvrages, PagedResponse)
+    if ouvrages.data:
+        assert isinstance(ouvrages.data[0], OuvragePrelevement)
 
 
 @pytest.mark.live
@@ -109,9 +110,9 @@ def test_get_points_prelevement_live() -> None:
     points = HubeauClient().prelevements.get_points_prelevement(
         params=PointPrelevementParams(code_departement=["75"], size=1)
     )
-    assert isinstance(points, list)
-    if points:
-        assert isinstance(points[0], PointPrelevement)
+    assert isinstance(points, PagedResponse)
+    if points.data:
+        assert isinstance(points.data[0], PointPrelevement)
 
 
 @pytest.mark.live
@@ -129,13 +130,13 @@ def test_get_chroniques_live() -> None:
     ouvrages = HubeauClient().prelevements.get_ouvrages(
         params=OuvrageParams(code_departement=["75"], size=1)
     )
-    if not ouvrages or not ouvrages[0].code_ouvrage:
+    if not ouvrages.data or not ouvrages.data[0].code_ouvrage:
         pytest.skip("No ouvrage available")
     chroniques = HubeauClient().prelevements.get_chroniques(
         params=ChroniquePrelevementParams(
-            code_ouvrage=[ouvrages[0].code_ouvrage], size=1
+            code_ouvrage=[ouvrages.data[0].code_ouvrage], size=1
         )
     )
-    assert isinstance(chroniques, list)
-    if chroniques:
-        assert isinstance(chroniques[0], ChroniquePrelevement)
+    assert isinstance(chroniques, PagedResponse)
+    if chroniques.data:
+        assert isinstance(chroniques.data[0], ChroniquePrelevement)

@@ -12,6 +12,7 @@ from hubeau_data.models.health import (
     EndpointStatus,
     HealthReport,
 )
+from hubeau_data.models.pagination import PagedResponse
 from hubeau_data.models.prelevements import (
     ChroniquePrelevement,
     ChroniquePrelevementParams,
@@ -33,30 +34,45 @@ class PrelevementsAPI(HubeauBaseAPI):
 
     def get_ouvrages(
         self, params: Optional[OuvrageParams] = None
-    ) -> List[OuvragePrelevement]:
+    ) -> PagedResponse[OuvragePrelevement]:
         resp = self._get(
             f"{self.BASE_URL}/referentiel/ouvrages",
             params.model_dump(exclude_none=True) if params else None,
         )
-        return [OuvragePrelevement(**item) for item in resp.json().get("data", [])]
+        body = resp.json()
+        return PagedResponse[OuvragePrelevement](
+            count=body["count"],
+            data=[OuvragePrelevement(**item) for item in body.get("data", [])],
+            next_cursor=self._extract_next_cursor(body.get("next")),
+        )
 
     def get_points_prelevement(
         self, params: Optional[PointPrelevementParams] = None
-    ) -> List[PointPrelevement]:
+    ) -> PagedResponse[PointPrelevement]:
         resp = self._get(
             f"{self.BASE_URL}/referentiel/points_prelevement",
             params.model_dump(exclude_none=True) if params else None,
         )
-        return [PointPrelevement(**item) for item in resp.json().get("data", [])]
+        body = resp.json()
+        return PagedResponse[PointPrelevement](
+            count=body["count"],
+            data=[PointPrelevement(**item) for item in body.get("data", [])],
+            next_cursor=self._extract_next_cursor(body.get("next")),
+        )
 
     def get_chroniques(
         self, params: Optional[ChroniquePrelevementParams] = None
-    ) -> List[ChroniquePrelevement]:
+    ) -> PagedResponse[ChroniquePrelevement]:
         resp = self._get(
             f"{self.BASE_URL}/chroniques",
             params.model_dump(exclude_none=True) if params else None,
         )
-        return [ChroniquePrelevement(**item) for item in resp.json().get("data", [])]
+        body = resp.json()
+        return PagedResponse[ChroniquePrelevement](
+            count=body["count"],
+            data=[ChroniquePrelevement(**item) for item in body.get("data", [])],
+            next_cursor=self._extract_next_cursor(body.get("next")),
+        )
 
     def check_health(self, n_requests: int = 3) -> HealthReport:
         statuses: List[EndpointStatus] = []
@@ -107,14 +123,14 @@ class PrelevementsAPI(HubeauBaseAPI):
             ouvrage_codes = [code_ouvrage]
             random_sample = False
         else:
-            ouvrages = self.get_ouvrages(
+            ouvrages_page = self.get_ouvrages(
                 params=OuvrageParams(size=500 if random else n_ouvrages)
             )
-            if random and len(ouvrages) >= n_ouvrages:
-                ouvrages = random_module.sample(ouvrages, n_ouvrages)
+            if random and len(ouvrages_page.data) >= n_ouvrages:
+                ouvrage_list = random_module.sample(ouvrages_page.data, n_ouvrages)
             else:
-                ouvrages = ouvrages[:n_ouvrages]
-            ouvrage_codes = [o.code_ouvrage for o in ouvrages if o.code_ouvrage]
+                ouvrage_list = ouvrages_page.data[:n_ouvrages]
+            ouvrage_codes = [o.code_ouvrage for o in ouvrage_list if o.code_ouvrage]
             random_sample = random
         windows: List[DataWindow] = []
         for code in ouvrage_codes:
