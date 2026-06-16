@@ -12,6 +12,7 @@ from hubeau_data.models.health import (
     EndpointStatus,
     HealthReport,
 )
+from hubeau_data.models.pagination import PagedResponse
 from hubeau_data.models.qualite_rivieres import (
     AnalysePc,
     AnalysePcParams,
@@ -30,37 +31,35 @@ class QualiteRivieresAPI(HubeauBaseAPI):
         ("condition_environnementale_pc", {"size": 1}),
     ]
 
-    def get_stations(self, params: Optional[StationPcParams] = None) -> List[StationPc]:
+    def get_stations(
+        self, params: Optional[StationPcParams] = None
+    ) -> PagedResponse[StationPc]:
         """Fetch physico-chemical monitoring stations."""
         resp = self._get(
             f"{self.BASE_URL}/station_pc",
             params.model_dump(exclude_none=True) if params else None,
         )
-        return [StationPc(**item) for item in resp.json().get("data", [])]
+        body = resp.json()
+        return PagedResponse[StationPc](
+            count=body["count"],
+            data=[StationPc(**item) for item in body.get("data", [])],
+            next_cursor=self._extract_next_cursor(body.get("next")),
+        )
 
     def get_analyses(
-        self,
-        params: Optional[AnalysePcParams] = None,
-        max_records: int = 1000,
-    ) -> List[AnalysePc]:
-        """Fetch physico-chemical analyses, paginated. Returns up to max_records."""
-        url = f"{self.BASE_URL}/analyse_pc"
-        query_params = params.model_dump(exclude_none=True) if params else {}
-        page_size = int(query_params.get("size", 100))
-        query_params["size"] = page_size
-        results: List[AnalysePc] = []
-        page = 1
-        while len(results) < max_records:
-            query_params["page"] = page
-            resp = self._get(url, query_params)
-            data = resp.json().get("data", [])
-            if not data:
-                break
-            results.extend([AnalysePc(**item) for item in data])
-            if len(data) < page_size:
-                break
-            page += 1
-        return results[:max_records]
+        self, params: Optional[AnalysePcParams] = None
+    ) -> PagedResponse[AnalysePc]:
+        """Fetch physico-chemical analyses."""
+        resp = self._get(
+            f"{self.BASE_URL}/analyse_pc",
+            params.model_dump(exclude_none=True) if params else None,
+        )
+        body = resp.json()
+        return PagedResponse[AnalysePc](
+            count=body["count"],
+            data=[AnalysePc(**item) for item in body.get("data", [])],
+            next_cursor=self._extract_next_cursor(body.get("next")),
+        )
 
     def check_health(self, n_requests: int = 3) -> HealthReport:
         statuses: List[EndpointStatus] = []
@@ -111,14 +110,14 @@ class QualiteRivieresAPI(HubeauBaseAPI):
             station_codes = [code_station]
             random_sample = False
         else:
-            stations = self.get_stations(
+            stations_page = self.get_stations(
                 params=StationPcParams(size=500 if random else n_stations)
             )
-            if random and len(stations) >= n_stations:
-                stations = random_module.sample(stations, n_stations)
+            if random and len(stations_page.data) >= n_stations:
+                station_list = random_module.sample(stations_page.data, n_stations)
             else:
-                stations = stations[:n_stations]
-            station_codes = [s.code_station for s in stations if s.code_station]
+                station_list = stations_page.data[:n_stations]
+            station_codes = [s.code_station for s in station_list if s.code_station]
             random_sample = random
         windows: List[DataWindow] = []
         for code in station_codes:

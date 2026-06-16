@@ -14,6 +14,7 @@ import pytest
 from pytest_httpx import HTTPXMock
 
 from hubeau_data.client import HubeauClient
+from hubeau_data.models.pagination import PagedResponse
 from hubeau_data.models.qualite_rivieres import (
     AnalysePc,
     AnalysePcParams,
@@ -59,9 +60,9 @@ def test_get_stations_mocked(httpx_mock: HTTPXMock) -> None:
     params = StationPcParams(libelle_commune=["Paris"], size=1)
     stations = client.qualite_rivieres.get_stations(params=params)
 
-    assert isinstance(stations, list)
-    assert len(stations) == 1
-    assert stations[0].code_station == "01001000"
+    assert isinstance(stations, PagedResponse)
+    assert len(stations.data) == 1
+    assert stations.data[0].code_station == "01001000"
 
 
 def test_get_analyses_mocked(httpx_mock: HTTPXMock) -> None:
@@ -88,11 +89,11 @@ def test_get_analyses_mocked(httpx_mock: HTTPXMock) -> None:
 
     client = HubeauClient()
     params = AnalysePcParams(code_station=["01001000"], size=1)
-    analyses = client.qualite_rivieres.get_analyses(params=params, max_records=1)
+    analyses = client.qualite_rivieres.get_analyses(params=params)
 
-    assert isinstance(analyses, list)
-    assert len(analyses) == 1
-    assert analyses[0].libelle_parametre == "Nitrates"
+    assert isinstance(analyses, PagedResponse)
+    assert len(analyses.data) == 1
+    assert analyses.data[0].libelle_parametre == "Nitrates"
 
 
 # ==============================================================================
@@ -107,11 +108,11 @@ def test_get_stations_live() -> None:
     params = StationPcParams(libelle_commune=["Paris"], size=1)
     stations = client.qualite_rivieres.get_stations(params=params)
 
-    assert isinstance(stations, list)
-    if stations:
-        assert isinstance(stations[0], StationPc)
-        assert hasattr(stations[0], "code_station")
-        assert hasattr(stations[0], "libelle_station")
+    assert isinstance(stations, PagedResponse)
+    if stations.data:
+        assert isinstance(stations.data[0], StationPc)
+        assert hasattr(stations.data[0], "code_station")
+        assert hasattr(stations.data[0], "libelle_station")
 
 
 @pytest.mark.live
@@ -127,16 +128,16 @@ def test_get_analyses_live() -> None:
     client = HubeauClient()
     station_params = StationPcParams(libelle_commune=["Paris"], size=1)
     stations = client.qualite_rivieres.get_stations(params=station_params)
-    if not stations:
+    if not stations.data:
         pytest.skip("No stations available for testing")
-    analyse_params = AnalysePcParams(code_station=[stations[0].code_station], size=1)
-    analyses = client.qualite_rivieres.get_analyses(
-        params=analyse_params, max_records=1
+    analyse_params = AnalysePcParams(
+        code_station=[stations.data[0].code_station], size=1
     )
+    analyses = client.qualite_rivieres.get_analyses(params=analyse_params)
 
-    assert isinstance(analyses, list)
-    if analyses:
-        assert isinstance(analyses[0], AnalysePc)
-        assert hasattr(analyses[0], "code_station")
-        assert hasattr(analyses[0], "libelle_station")
-        assert hasattr(analyses[0], "libelle_parametre")
+    assert isinstance(analyses, PagedResponse)
+    if analyses.data:
+        assert isinstance(analyses.data[0], AnalysePc)
+        assert hasattr(analyses.data[0], "code_station")
+        assert hasattr(analyses.data[0], "libelle_station")
+        assert hasattr(analyses.data[0], "libelle_parametre")
