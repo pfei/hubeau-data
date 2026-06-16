@@ -50,36 +50,40 @@ from hubeau_data.models.qualite_rivieres import StationPcParams
 client = HubeauClient()
 
 # Hydrométrie — real-time observations
-params = ObservationTrParams(code_station=["Y120201001"], size=3)
+# Note: use code_entite (not code_station) to filter observations_tr
+params = ObservationTrParams(code_entite=["O001004003"], grandeur_hydro=["Q"], size=3)
 observations = client.hydrometrie.get_observations_tr(params=params)
-print(observations[0].date_obs, observations[0].resultat_obs)
+print(observations.count)                        # total records available server-side
+print(observations.data[0].date_obs, observations.data[0].resultat_obs)
+print(observations.next_cursor)                  # pass to next call to paginate
 
 # Qualité Rivières — water quality stations
 stations = client.qualite_rivieres.get_stations(
     params=StationPcParams(code_departement=["75"], size=3)
 )
-print(stations[0].code_station, stations[0].libelle_station)
+print(stations.count)
+print(stations.data[0].code_station, stations.data[0].libelle_station)
 
 # Eau potable — drinking water analyses for a commune
 from hubeau_data.models.eau_potable import ResultatEauPotableParams
 resultats = client.eau_potable.get_resultats_dis(
     params=ResultatEauPotableParams(code_commune=["75056"], size=5)
 )
-print(resultats[0].libelle_parametre, resultats[0].resultat_numerique)
+print(resultats.data[0].libelle_parametre, resultats.data[0].resultat_numerique)
 
 # Phytopharmaceutiques — national pesticide sales
 from hubeau_data.models.phytopharmaceutiques import VenteSubstanceParams
 ventes = client.phytopharmaceutiques.get_ventes_substances(
     params=VenteSubstanceParams(type_territoire="National", size=5)
 )
-print(ventes[0].libelle_substance, ventes[0].quantite, ventes[0].annee)
+print(ventes.data[0].libelle_substance, ventes.data[0].quantite, ventes.data[0].annee)
 
 # API health check — works on every API
 report = client.hydrometrie.check_health(n_requests=3)
 print(report.summary())
 
 # Data coverage — spot-check stations
-cov = client.hydrometrie.data_coverage(code_station="Y120201001")
+cov = client.hydrometrie.data_coverage(code_station="O001004003")
 print(cov.summary())
 ```
 
@@ -95,16 +99,16 @@ from hubeau_data.models.hydrometrie import ObservationTrParams
 
 async def main():
     async with AsyncHubeauClient() as client:
-        codes = ["Y120201001", "K418001001", "A1234567"]
+        codes = ["O001004003", "K418001001", "A1234567"]
         tasks = [
             client.hydrometrie.get_observations_tr(
-                params=ObservationTrParams(code_station=[c], size=10)
+                params=ObservationTrParams(code_entite=[c], grandeur_hydro=["Q"], size=10)
             )
             for c in codes
         ]
         results = await asyncio.gather(*tasks)
         for code, obs in zip(codes, results):
-            print(code, len(obs), "observations")
+            print(code, obs.count, "total /", len(obs.data), "fetched")
 
 asyncio.run(main())
 ```
@@ -177,7 +181,10 @@ Exploration scripts under `scripts/qualite_rivieres/` and `scripts/hydrometrie/`
 - [x] Async client (`AsyncHubeauClient`, all 11 APIs)
 - [x] Optional dependency groups — `pandas`, `geopandas`, `matplotlib` as extras
 - [x] `CHANGELOG.md` + `CONTRIBUTING.md`
-- [ ] PyPI release
+- [x] PyPI release (`0.1.0`, `0.2.0`)
+- [x] `PagedResponse[T]` — all `get_*` methods expose `count`, `data`, `next_cursor`
+- [ ] Rate limiting in async client (Semaphore)
+- [ ] Full audit of query parameter names across remaining APIs
 
 ## License
 
