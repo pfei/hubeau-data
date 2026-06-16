@@ -20,6 +20,7 @@ from hubeau_data.models.hydrobiologie import (
     TaxonHydrobio,
     TaxonHydrobioParams,
 )
+from hubeau_data.models.pagination import PagedResponse
 
 
 class HydrobiologieAPI(HubeauBaseAPI):
@@ -33,30 +34,45 @@ class HydrobiologieAPI(HubeauBaseAPI):
 
     def get_stations(
         self, params: Optional[StationHydrobioParams] = None
-    ) -> List[StationHydrobio]:
+    ) -> PagedResponse[StationHydrobio]:
         resp = self._get(
             f"{self.BASE_URL}/stations_hydrobio",
             params.model_dump(exclude_none=True) if params else None,
         )
-        return [StationHydrobio(**item) for item in resp.json().get("data", [])]
+        body = resp.json()
+        return PagedResponse[StationHydrobio](
+            count=body["count"],
+            data=[StationHydrobio(**item) for item in body.get("data", [])],
+            next_cursor=self._extract_next_cursor(body.get("next")),
+        )
 
     def get_indices(
         self, params: Optional[IndiceHydrobioParams] = None
-    ) -> List[IndiceHydrobio]:
+    ) -> PagedResponse[IndiceHydrobio]:
         resp = self._get(
             f"{self.BASE_URL}/indices",
             params.model_dump(exclude_none=True) if params else None,
         )
-        return [IndiceHydrobio(**item) for item in resp.json().get("data", [])]
+        body = resp.json()
+        return PagedResponse[IndiceHydrobio](
+            count=body["count"],
+            data=[IndiceHydrobio(**item) for item in body.get("data", [])],
+            next_cursor=self._extract_next_cursor(body.get("next")),
+        )
 
     def get_taxons(
         self, params: Optional[TaxonHydrobioParams] = None
-    ) -> List[TaxonHydrobio]:
+    ) -> PagedResponse[TaxonHydrobio]:
         resp = self._get(
             f"{self.BASE_URL}/taxons",
             params.model_dump(exclude_none=True) if params else None,
         )
-        return [TaxonHydrobio(**item) for item in resp.json().get("data", [])]
+        body = resp.json()
+        return PagedResponse[TaxonHydrobio](
+            count=body["count"],
+            data=[TaxonHydrobio(**item) for item in body.get("data", [])],
+            next_cursor=self._extract_next_cursor(body.get("next")),
+        )
 
     def check_health(self, n_requests: int = 3) -> HealthReport:
         statuses: List[EndpointStatus] = []
@@ -107,15 +123,17 @@ class HydrobiologieAPI(HubeauBaseAPI):
             station_codes = [code_station]
             random_sample = False
         else:
-            stations = self.get_stations(
+            stations_page = self.get_stations(
                 params=StationHydrobioParams(size=500 if random else n_stations)
             )
-            if random and len(stations) >= n_stations:
-                stations = random_module.sample(stations, n_stations)
+            if random and len(stations_page.data) >= n_stations:
+                stations_list = random_module.sample(stations_page.data, n_stations)
             else:
-                stations = stations[:n_stations]
+                stations_list = stations_page.data[:n_stations]
             station_codes = [
-                s.code_station_hydrobio for s in stations if s.code_station_hydrobio
+                s.code_station_hydrobio
+                for s in stations_list
+                if s.code_station_hydrobio
             ]
             random_sample = random
         windows: List[DataWindow] = []

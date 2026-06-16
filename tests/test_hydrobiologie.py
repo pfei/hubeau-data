@@ -15,6 +15,7 @@ from hubeau_data.models.hydrobiologie import (
     StationHydrobio,
     TaxonHydrobio,
 )
+from hubeau_data.models.pagination import PagedResponse
 
 
 @pytest.fixture(autouse=True, scope="session")
@@ -52,10 +53,10 @@ def test_get_stations_mocked(httpx_mock: HTTPXMock) -> None:
     )
     client = HubeauClient()
     stations = client.hydrobiologie.get_stations()
-    assert isinstance(stations, list)
-    assert len(stations) == 1
-    assert isinstance(stations[0], StationHydrobio)
-    assert stations[0].code_station_hydrobio == "04001000"
+    assert isinstance(stations, PagedResponse)
+    assert len(stations.data) == 1
+    assert isinstance(stations.data[0], StationHydrobio)
+    assert stations.data[0].code_station_hydrobio == "04001000"
 
 
 def test_get_indices_mocked(httpx_mock: HTTPXMock) -> None:
@@ -70,10 +71,10 @@ def test_get_indices_mocked(httpx_mock: HTTPXMock) -> None:
     indices = client.hydrobiologie.get_indices(
         params=IndiceHydrobioParams(code_station_hydrobio=["04001000"], size=1)
     )
-    assert isinstance(indices, list)
-    assert len(indices) == 1
-    assert isinstance(indices[0], IndiceHydrobio)
-    assert indices[0].libelle_indice == "IBGN"
+    assert isinstance(indices, PagedResponse)
+    assert len(indices.data) == 1
+    assert isinstance(indices.data[0], IndiceHydrobio)
+    assert indices.data[0].libelle_indice == "IBGN"
 
 
 def test_get_taxons_mocked(httpx_mock: HTTPXMock) -> None:
@@ -88,10 +89,10 @@ def test_get_taxons_mocked(httpx_mock: HTTPXMock) -> None:
     taxons = client.hydrobiologie.get_taxons(
         params=TaxonHydrobioParams(code_station_hydrobio=["04001000"], size=1)
     )
-    assert isinstance(taxons, list)
-    assert len(taxons) == 1
-    assert isinstance(taxons[0], TaxonHydrobio)
-    assert taxons[0].libelle_appel_taxon == "Baetis rhodani"
+    assert isinstance(taxons, PagedResponse)
+    assert len(taxons.data) == 1
+    assert isinstance(taxons.data[0], TaxonHydrobio)
+    assert taxons.data[0].libelle_appel_taxon == "Baetis rhodani"
 
 
 # ==============================================================================
@@ -106,9 +107,9 @@ def test_get_stations_live() -> None:
     stations = HubeauClient().hydrobiologie.get_stations(
         params=StationHydrobioParams(code_departement=["01"], size=1)
     )
-    assert isinstance(stations, list)
-    if stations:
-        assert isinstance(stations[0], StationHydrobio)
+    assert isinstance(stations, PagedResponse)
+    if stations.data:
+        assert isinstance(stations.data[0], StationHydrobio)
 
 
 @pytest.mark.live
@@ -121,16 +122,16 @@ def test_get_indices_live() -> None:
     stations = HubeauClient().hydrobiologie.get_stations(
         params=StationHydrobioParams(code_departement=["01"], size=1)
     )
-    if not stations or not stations[0].code_station_hydrobio:
+    if not stations.data or not stations.data[0].code_station_hydrobio:
         pytest.skip("No station available")
     indices = HubeauClient().hydrobiologie.get_indices(
         params=IndiceHydrobioParams(
-            code_station_hydrobio=[stations[0].code_station_hydrobio], size=1
+            code_station_hydrobio=[stations.data[0].code_station_hydrobio], size=1
         )
     )
-    assert isinstance(indices, list)
-    if indices:
-        assert isinstance(indices[0], IndiceHydrobio)
+    assert isinstance(indices, PagedResponse)
+    if indices.data:
+        assert isinstance(indices.data[0], IndiceHydrobio)
 
 
 @pytest.mark.live
@@ -143,13 +144,13 @@ def test_get_taxons_live() -> None:
     stations = HubeauClient().hydrobiologie.get_stations(
         params=StationHydrobioParams(code_departement=["01"], size=1)
     )
-    if not stations or not stations[0].code_station_hydrobio:
+    if not stations.data or not stations.data[0].code_station_hydrobio:
         pytest.skip("No station available")
     taxons = HubeauClient().hydrobiologie.get_taxons(
         params=TaxonHydrobioParams(
-            code_station_hydrobio=[stations[0].code_station_hydrobio], size=1
+            code_station_hydrobio=[stations.data[0].code_station_hydrobio], size=1
         )
     )
-    assert isinstance(taxons, list)
-    if taxons:
-        assert isinstance(taxons[0], TaxonHydrobio)
+    assert isinstance(taxons, PagedResponse)
+    if taxons.data:
+        assert isinstance(taxons.data[0], TaxonHydrobio)
