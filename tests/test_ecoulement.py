@@ -15,6 +15,7 @@ from hubeau_data.models.ecoulement import (
     ObservationEcoulement,
     StationEcoulement,
 )
+from hubeau_data.models.pagination import PagedResponse
 
 
 @pytest.fixture(autouse=True, scope="session")
@@ -50,10 +51,10 @@ def test_get_stations_mocked(httpx_mock: HTTPXMock) -> None:
     )
     client = HubeauClient()
     stations = client.ecoulement.get_stations()
-    assert isinstance(stations, list)
-    assert len(stations) == 1
-    assert isinstance(stations[0], StationEcoulement)
-    assert stations[0].code_station == "A1000600"
+    assert isinstance(stations, PagedResponse)
+    assert len(stations.data) == 1
+    assert isinstance(stations.data[0], StationEcoulement)
+    assert stations.data[0].code_station == "A1000600"
 
 
 def test_get_observations_mocked(httpx_mock: HTTPXMock) -> None:
@@ -68,10 +69,10 @@ def test_get_observations_mocked(httpx_mock: HTTPXMock) -> None:
     obs = client.ecoulement.get_observations(
         params=ObservationEcoulementParams(code_station=["A1000600"], size=1)
     )
-    assert isinstance(obs, list)
-    assert len(obs) == 1
-    assert isinstance(obs[0], ObservationEcoulement)
-    assert obs[0].code_ecoulement == "1"
+    assert isinstance(obs, PagedResponse)
+    assert len(obs.data) == 1
+    assert isinstance(obs.data[0], ObservationEcoulement)
+    assert obs.data[0].code_ecoulement == "1"
 
 
 def test_get_campagnes_mocked(httpx_mock: HTTPXMock) -> None:
@@ -82,10 +83,10 @@ def test_get_campagnes_mocked(httpx_mock: HTTPXMock) -> None:
     )
     client = HubeauClient()
     campagnes = client.ecoulement.get_campagnes()
-    assert isinstance(campagnes, list)
-    assert len(campagnes) == 1
-    assert isinstance(campagnes[0], CampagneEcoulement)
-    assert campagnes[0].libelle_type_campagne == "Usuelle"
+    assert isinstance(campagnes, PagedResponse)
+    assert len(campagnes.data) == 1
+    assert isinstance(campagnes.data[0], CampagneEcoulement)
+    assert campagnes.data[0].libelle_type_campagne == "Usuelle"
 
 
 # ==============================================================================
@@ -100,9 +101,9 @@ def test_get_stations_live() -> None:
     stations = HubeauClient().ecoulement.get_stations(
         params=StationEcoulementParams(code_departement=["75"], size=1)
     )
-    assert isinstance(stations, list)
-    if stations:
-        assert isinstance(stations[0], StationEcoulement)
+    assert isinstance(stations, PagedResponse)
+    if stations.data:
+        assert isinstance(stations.data[0], StationEcoulement)
 
 
 @pytest.mark.live
@@ -115,16 +116,16 @@ def test_get_observations_live() -> None:
     stations = HubeauClient().ecoulement.get_stations(
         params=StationEcoulementParams(code_departement=["75"], size=1)
     )
-    if not stations or not stations[0].code_station:
+    if not stations.data or not stations.data[0].code_station:
         pytest.skip("No station available")
     obs = HubeauClient().ecoulement.get_observations(
         params=ObservationEcoulementParams(
-            code_station=[stations[0].code_station], size=1
+            code_station=[stations.data[0].code_station], size=1
         )
     )
-    assert isinstance(obs, list)
-    if obs:
-        assert isinstance(obs[0], ObservationEcoulement)
+    assert isinstance(obs, PagedResponse)
+    if obs.data:
+        assert isinstance(obs.data[0], ObservationEcoulement)
 
 
 @pytest.mark.live
@@ -134,6 +135,6 @@ def test_get_campagnes_live() -> None:
     campagnes = HubeauClient().ecoulement.get_campagnes(
         params=CampagneEcoulementParams(size=1)
     )
-    assert isinstance(campagnes, list)
-    if campagnes:
-        assert isinstance(campagnes[0], CampagneEcoulement)
+    assert isinstance(campagnes, PagedResponse)
+    if campagnes.data:
+        assert isinstance(campagnes.data[0], CampagneEcoulement)

@@ -20,6 +20,7 @@ from hubeau_data.models.health import (
     EndpointStatus,
     HealthReport,
 )
+from hubeau_data.models.pagination import PagedResponse
 
 
 class EcoulementAPI(HubeauBaseAPI):
@@ -33,30 +34,45 @@ class EcoulementAPI(HubeauBaseAPI):
 
     def get_stations(
         self, params: Optional[StationEcoulementParams] = None
-    ) -> List[StationEcoulement]:
+    ) -> PagedResponse[StationEcoulement]:
         resp = self._get(
             f"{self.BASE_URL}/stations",
             params.model_dump(exclude_none=True) if params else None,
         )
-        return [StationEcoulement(**item) for item in resp.json().get("data", [])]
+        body = resp.json()
+        return PagedResponse[StationEcoulement](
+            count=body["count"],
+            data=[StationEcoulement(**item) for item in body.get("data", [])],
+            next_cursor=self._extract_next_cursor(body.get("next")),
+        )
 
     def get_observations(
         self, params: Optional[ObservationEcoulementParams] = None
-    ) -> List[ObservationEcoulement]:
+    ) -> PagedResponse[ObservationEcoulement]:
         resp = self._get(
             f"{self.BASE_URL}/observations",
             params.model_dump(exclude_none=True) if params else None,
         )
-        return [ObservationEcoulement(**item) for item in resp.json().get("data", [])]
+        body = resp.json()
+        return PagedResponse[ObservationEcoulement](
+            count=body["count"],
+            data=[ObservationEcoulement(**item) for item in body.get("data", [])],
+            next_cursor=self._extract_next_cursor(body.get("next")),
+        )
 
     def get_campagnes(
         self, params: Optional[CampagneEcoulementParams] = None
-    ) -> List[CampagneEcoulement]:
+    ) -> PagedResponse[CampagneEcoulement]:
         resp = self._get(
             f"{self.BASE_URL}/campagnes",
             params.model_dump(exclude_none=True) if params else None,
         )
-        return [CampagneEcoulement(**item) for item in resp.json().get("data", [])]
+        body = resp.json()
+        return PagedResponse[CampagneEcoulement](
+            count=body["count"],
+            data=[CampagneEcoulement(**item) for item in body.get("data", [])],
+            next_cursor=self._extract_next_cursor(body.get("next")),
+        )
 
     def check_health(self, n_requests: int = 3) -> HealthReport:
         statuses: List[EndpointStatus] = []
@@ -107,14 +123,14 @@ class EcoulementAPI(HubeauBaseAPI):
             station_codes = [code_station]
             random_sample = False
         else:
-            stations = self.get_stations(
+            stations_page = self.get_stations(
                 params=StationEcoulementParams(size=500 if random else n_stations)
             )
-            if random and len(stations) >= n_stations:
-                stations = random_module.sample(stations, n_stations)
+            if random and len(stations_page.data) >= n_stations:
+                stations_list = random_module.sample(stations_page.data, n_stations)
             else:
-                stations = stations[:n_stations]
-            station_codes = [s.code_station for s in stations if s.code_station]
+                stations_list = stations_page.data[:n_stations]
+            station_codes = [s.code_station for s in stations_list if s.code_station]
             random_sample = random
         windows: List[DataWindow] = []
         for code in station_codes:
