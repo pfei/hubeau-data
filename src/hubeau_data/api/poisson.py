@@ -23,6 +23,7 @@ from hubeau_data.models.poisson import (
     StationPoisson,
     StationPoissonParams,
 )
+from hubeau_data.utils import extract_next_cursor
 
 
 class PoissonAPI(HubeauBaseAPI):
@@ -46,7 +47,7 @@ class PoissonAPI(HubeauBaseAPI):
         return PagedResponse[StationPoisson](
             count=body["count"],
             data=[StationPoisson(**item) for item in body.get("data", [])],
-            next_cursor=self._extract_next_cursor(body.get("next")),
+            next_cursor=extract_next_cursor(body.get("next")),
         )
 
     def get_indicateurs(
@@ -60,7 +61,7 @@ class PoissonAPI(HubeauBaseAPI):
         return PagedResponse[IndicateurPoisson](
             count=body["count"],
             data=[IndicateurPoisson(**item) for item in body.get("data", [])],
-            next_cursor=self._extract_next_cursor(body.get("next")),
+            next_cursor=extract_next_cursor(body.get("next")),
         )
 
     def get_observations(
@@ -74,7 +75,7 @@ class PoissonAPI(HubeauBaseAPI):
         return PagedResponse[ObservationPoisson](
             count=body["count"],
             data=[ObservationPoisson(**item) for item in body.get("data", [])],
-            next_cursor=self._extract_next_cursor(body.get("next")),
+            next_cursor=extract_next_cursor(body.get("next")),
         )
 
     def get_operations(
@@ -88,7 +89,7 @@ class PoissonAPI(HubeauBaseAPI):
         return PagedResponse[OperationPoisson](
             count=body["count"],
             data=[OperationPoisson(**item) for item in body.get("data", [])],
-            next_cursor=self._extract_next_cursor(body.get("next")),
+            next_cursor=extract_next_cursor(body.get("next")),
         )
 
     def check_health(self, n_requests: int = 3) -> HealthReport:

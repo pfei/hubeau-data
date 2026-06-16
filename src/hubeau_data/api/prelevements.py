@@ -21,6 +21,7 @@ from hubeau_data.models.prelevements import (
     PointPrelevement,
     PointPrelevementParams,
 )
+from hubeau_data.utils import extract_next_cursor
 
 
 class PrelevementsAPI(HubeauBaseAPI):
@@ -43,7 +44,7 @@ class PrelevementsAPI(HubeauBaseAPI):
         return PagedResponse[OuvragePrelevement](
             count=body["count"],
             data=[OuvragePrelevement(**item) for item in body.get("data", [])],
-            next_cursor=self._extract_next_cursor(body.get("next")),
+            next_cursor=extract_next_cursor(body.get("next")),
         )
 
     def get_points_prelevement(
@@ -57,7 +58,7 @@ class PrelevementsAPI(HubeauBaseAPI):
         return PagedResponse[PointPrelevement](
             count=body["count"],
             data=[PointPrelevement(**item) for item in body.get("data", [])],
-            next_cursor=self._extract_next_cursor(body.get("next")),
+            next_cursor=extract_next_cursor(body.get("next")),
         )
 
     def get_chroniques(
@@ -71,7 +72,7 @@ class PrelevementsAPI(HubeauBaseAPI):
         return PagedResponse[ChroniquePrelevement](
             count=body["count"],
             data=[ChroniquePrelevement(**item) for item in body.get("data", [])],
-            next_cursor=self._extract_next_cursor(body.get("next")),
+            next_cursor=extract_next_cursor(body.get("next")),
         )
 
     def check_health(self, n_requests: int = 3) -> HealthReport:

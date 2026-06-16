@@ -23,6 +23,7 @@ from hubeau_data.models.hydrometrie import (
     StationParams,
 )
 from hubeau_data.models.pagination import PagedResponse
+from hubeau_data.utils import extract_next_cursor
 
 
 class HydrometrieAPI(HubeauBaseAPI):
@@ -44,7 +45,7 @@ class HydrometrieAPI(HubeauBaseAPI):
         return PagedResponse[Site](
             count=body["count"],
             data=[Site(**item) for item in body.get("data", [])],
-            next_cursor=self._extract_next_cursor(body.get("next")),
+            next_cursor=extract_next_cursor(body.get("next")),
         )
 
     def get_stations(
@@ -58,7 +59,7 @@ class HydrometrieAPI(HubeauBaseAPI):
         return PagedResponse[Station](
             count=body["count"],
             data=[Station(**item) for item in body.get("data", [])],
-            next_cursor=self._extract_next_cursor(body.get("next")),
+            next_cursor=extract_next_cursor(body.get("next")),
         )
 
     def get_observations_tr(
@@ -72,7 +73,7 @@ class HydrometrieAPI(HubeauBaseAPI):
         return PagedResponse[ObservationTr](
             count=body["count"],
             data=[ObservationTr(**item) for item in body["data"]],
-            next_cursor=self._extract_next_cursor(body.get("next")),
+            next_cursor=extract_next_cursor(body.get("next")),
         )
 
     def get_obs_elab(
@@ -86,7 +87,7 @@ class HydrometrieAPI(HubeauBaseAPI):
         return PagedResponse[ObsElab](
             count=body["count"],
             data=[ObsElab(**item) for item in body["data"]],
-            next_cursor=self._extract_next_cursor(body.get("next")),
+            next_cursor=extract_next_cursor(body.get("next")),
         )
 
     # --- Health & Coverage — pas de retry : on mesure les erreurs ---

@@ -21,6 +21,7 @@ from hubeau_data.models.piezometrie import (
     StationPiezo,
     StationPiezoParams,
 )
+from hubeau_data.utils import extract_next_cursor
 
 
 class PiezometrieAPI(HubeauBaseAPI):
@@ -43,7 +44,7 @@ class PiezometrieAPI(HubeauBaseAPI):
         return PagedResponse[StationPiezo](
             count=body["count"],
             data=[StationPiezo(**item) for item in body.get("data", [])],
-            next_cursor=self._extract_next_cursor(body.get("next")),
+            next_cursor=extract_next_cursor(body.get("next")),
         )
 
     def get_chroniques(
@@ -57,7 +58,7 @@ class PiezometrieAPI(HubeauBaseAPI):
         return PagedResponse[ChroniquePiezo](
             count=body["count"],
             data=[ChroniquePiezo(**item) for item in body.get("data", [])],
-            next_cursor=self._extract_next_cursor(body.get("next")),
+            next_cursor=extract_next_cursor(body.get("next")),
         )
 
     def get_chroniques_tr(
@@ -71,7 +72,7 @@ class PiezometrieAPI(HubeauBaseAPI):
         return PagedResponse[ChroniquePiezoTr](
             count=body["count"],
             data=[ChroniquePiezoTr(**item) for item in body.get("data", [])],
-            next_cursor=self._extract_next_cursor(body.get("next")),
+            next_cursor=extract_next_cursor(body.get("next")),
         )
 
     def check_health(self, n_requests: int = 3) -> HealthReport:

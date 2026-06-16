@@ -21,6 +21,7 @@ from hubeau_data.models.hydrobiologie import (
     TaxonHydrobioParams,
 )
 from hubeau_data.models.pagination import PagedResponse
+from hubeau_data.utils import extract_next_cursor
 
 
 class HydrobiologieAPI(HubeauBaseAPI):
@@ -43,7 +44,7 @@ class HydrobiologieAPI(HubeauBaseAPI):
         return PagedResponse[StationHydrobio](
             count=body["count"],
             data=[StationHydrobio(**item) for item in body.get("data", [])],
-            next_cursor=self._extract_next_cursor(body.get("next")),
+            next_cursor=extract_next_cursor(body.get("next")),
         )
 
     def get_indices(
@@ -57,7 +58,7 @@ class HydrobiologieAPI(HubeauBaseAPI):
         return PagedResponse[IndiceHydrobio](
             count=body["count"],
             data=[IndiceHydrobio(**item) for item in body.get("data", [])],
-            next_cursor=self._extract_next_cursor(body.get("next")),
+            next_cursor=extract_next_cursor(body.get("next")),
         )
 
     def get_taxons(
@@ -71,7 +72,7 @@ class HydrobiologieAPI(HubeauBaseAPI):
         return PagedResponse[TaxonHydrobio](
             count=body["count"],
             data=[TaxonHydrobio(**item) for item in body.get("data", [])],
-            next_cursor=self._extract_next_cursor(body.get("next")),
+            next_cursor=extract_next_cursor(body.get("next")),
         )
 
     def check_health(self, n_requests: int = 3) -> HealthReport:

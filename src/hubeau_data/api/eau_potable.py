@@ -19,6 +19,7 @@ from hubeau_data.models.health import (
     HealthReport,
 )
 from hubeau_data.models.pagination import PagedResponse
+from hubeau_data.utils import extract_next_cursor
 
 
 class EauPotableAPI(HubeauBaseAPI):
@@ -40,7 +41,7 @@ class EauPotableAPI(HubeauBaseAPI):
         return PagedResponse[CommuneUdi](
             count=body["count"],
             data=[CommuneUdi(**item) for item in body.get("data", [])],
-            next_cursor=self._extract_next_cursor(body.get("next")),
+            next_cursor=extract_next_cursor(body.get("next")),
         )
 
     def get_resultats_dis(
@@ -54,7 +55,7 @@ class EauPotableAPI(HubeauBaseAPI):
         return PagedResponse[ResultatEauPotable](
             count=body["count"],
             data=[ResultatEauPotable(**item) for item in body.get("data", [])],
-            next_cursor=self._extract_next_cursor(body.get("next")),
+            next_cursor=extract_next_cursor(body.get("next")),
         )
 
     def check_health(self, n_requests: int = 3) -> HealthReport:

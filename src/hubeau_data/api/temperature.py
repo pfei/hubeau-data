@@ -19,6 +19,7 @@ from hubeau_data.models.temperature import (
     StationTemperature,
     StationTemperatureParams,
 )
+from hubeau_data.utils import extract_next_cursor
 
 
 class TemperatureAPI(HubeauBaseAPI):
@@ -40,7 +41,7 @@ class TemperatureAPI(HubeauBaseAPI):
         return PagedResponse[StationTemperature](
             count=body["count"],
             data=[StationTemperature(**item) for item in body.get("data", [])],
-            next_cursor=self._extract_next_cursor(body.get("next")),
+            next_cursor=extract_next_cursor(body.get("next")),
         )
 
     def get_chronique(
@@ -54,7 +55,7 @@ class TemperatureAPI(HubeauBaseAPI):
         return PagedResponse[ChroniqueTemperature](
             count=body["count"],
             data=[ChroniqueTemperature(**item) for item in body.get("data", [])],
-            next_cursor=self._extract_next_cursor(body.get("next")),
+            next_cursor=extract_next_cursor(body.get("next")),
         )
 
     def check_health(self, n_requests: int = 3) -> HealthReport:

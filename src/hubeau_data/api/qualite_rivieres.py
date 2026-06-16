@@ -19,6 +19,7 @@ from hubeau_data.models.qualite_rivieres import (
     StationPc,
     StationPcParams,
 )
+from hubeau_data.utils import extract_next_cursor
 
 
 class QualiteRivieresAPI(HubeauBaseAPI):
@@ -43,7 +44,7 @@ class QualiteRivieresAPI(HubeauBaseAPI):
         return PagedResponse[StationPc](
             count=body["count"],
             data=[StationPc(**item) for item in body.get("data", [])],
-            next_cursor=self._extract_next_cursor(body.get("next")),
+            next_cursor=extract_next_cursor(body.get("next")),
         )
 
     def get_analyses(
@@ -58,7 +59,7 @@ class QualiteRivieresAPI(HubeauBaseAPI):
         return PagedResponse[AnalysePc](
             count=body["count"],
             data=[AnalysePc(**item) for item in body.get("data", [])],
-            next_cursor=self._extract_next_cursor(body.get("next")),
+            next_cursor=extract_next_cursor(body.get("next")),
         )
 
     def check_health(self, n_requests: int = 3) -> HealthReport:

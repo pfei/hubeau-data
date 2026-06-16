@@ -22,6 +22,7 @@ from hubeau_data.models.phytopharmaceutiques import (
     VenteSubstance,
     VenteSubstanceParams,
 )
+from hubeau_data.utils import extract_next_cursor
 
 _DEFAULT_PARAMS = {"type_territoire": "National"}
 
@@ -47,7 +48,7 @@ class PhytopharmaceutiquesAPI(HubeauBaseAPI):
         return PagedResponse[AchatSubstance](
             count=body["count"],
             data=[AchatSubstance(**item) for item in body.get("data", [])],
-            next_cursor=self._extract_next_cursor(body.get("next")),
+            next_cursor=extract_next_cursor(body.get("next")),
         )
 
     def get_achats_produits(
@@ -61,7 +62,7 @@ class PhytopharmaceutiquesAPI(HubeauBaseAPI):
         return PagedResponse[AchatProduit](
             count=body["count"],
             data=[AchatProduit(**item) for item in body.get("data", [])],
-            next_cursor=self._extract_next_cursor(body.get("next")),
+            next_cursor=extract_next_cursor(body.get("next")),
         )
 
     def get_ventes_substances(
@@ -75,7 +76,7 @@ class PhytopharmaceutiquesAPI(HubeauBaseAPI):
         return PagedResponse[VenteSubstance](
             count=body["count"],
             data=[VenteSubstance(**item) for item in body.get("data", [])],
-            next_cursor=self._extract_next_cursor(body.get("next")),
+            next_cursor=extract_next_cursor(body.get("next")),
         )
 
     def get_ventes_produits(
@@ -89,7 +90,7 @@ class PhytopharmaceutiquesAPI(HubeauBaseAPI):
         return PagedResponse[VenteProduit](
             count=body["count"],
             data=[VenteProduit(**item) for item in body.get("data", [])],
-            next_cursor=self._extract_next_cursor(body.get("next")),
+            next_cursor=extract_next_cursor(body.get("next")),
         )
 
     def check_health(self, n_requests: int = 3) -> HealthReport:

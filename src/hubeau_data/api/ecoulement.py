@@ -21,6 +21,7 @@ from hubeau_data.models.health import (
     HealthReport,
 )
 from hubeau_data.models.pagination import PagedResponse
+from hubeau_data.utils import extract_next_cursor
 
 
 class EcoulementAPI(HubeauBaseAPI):
@@ -43,7 +44,7 @@ class EcoulementAPI(HubeauBaseAPI):
         return PagedResponse[StationEcoulement](
             count=body["count"],
             data=[StationEcoulement(**item) for item in body.get("data", [])],
-            next_cursor=self._extract_next_cursor(body.get("next")),
+            next_cursor=extract_next_cursor(body.get("next")),
         )
 
     def get_observations(
@@ -57,7 +58,7 @@ class EcoulementAPI(HubeauBaseAPI):
         return PagedResponse[ObservationEcoulement](
             count=body["count"],
             data=[ObservationEcoulement(**item) for item in body.get("data", [])],
-            next_cursor=self._extract_next_cursor(body.get("next")),
+            next_cursor=extract_next_cursor(body.get("next")),
         )
 
     def get_campagnes(
@@ -71,7 +72,7 @@ class EcoulementAPI(HubeauBaseAPI):
         return PagedResponse[CampagneEcoulement](
             count=body["count"],
             data=[CampagneEcoulement(**item) for item in body.get("data", [])],
-            next_cursor=self._extract_next_cursor(body.get("next")),
+            next_cursor=extract_next_cursor(body.get("next")),
         )
 
     def check_health(self, n_requests: int = 3) -> HealthReport:
