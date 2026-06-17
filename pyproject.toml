@@ -1,6 +1,6 @@
 [project]
 name = "hubeau-data"
-version = "0.2.0"
+version = "0.3.0"
 description = "Pythonic, typed, modern client for the Hubeau water data APIs."
 authors = [{ name = "Pierre Feilles", email = "pierre.feilles@gmail.com" }]
 readme = "README.md"

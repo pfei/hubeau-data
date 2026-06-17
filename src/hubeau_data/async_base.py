@@ -1,5 +1,6 @@
 """Async base class for Hub'Eau API clients."""
 
+import asyncio
 from typing import Any
 
 import httpx
@@ -17,17 +18,24 @@ class AsyncHubeauBaseAPI:
     """
 
     DEFAULT_TIMEOUT: float = 30.0
+    DEFAULT_MAX_CONCURRENT: int = 5
 
-    def __init__(self, http_client: httpx.AsyncClient) -> None:
+    def __init__(
+        self,
+        http_client: httpx.AsyncClient,
+        max_concurrent: int = DEFAULT_MAX_CONCURRENT,
+    ) -> None:
         self._client = http_client
+        self._semaphore = asyncio.Semaphore(max_concurrent)
 
     @hubeau_retry
     async def _get(
         self, url: str, params: dict[str, Any] | None = None
     ) -> httpx.Response:
         """Async GET request with automatic retry on transient errors."""
-        resp = await self._client.get(
-            url, params=params or {}, timeout=self.DEFAULT_TIMEOUT
-        )
-        resp.raise_for_status()
-        return resp
+        async with self._semaphore:
+            resp = await self._client.get(
+                url, params=params or {}, timeout=self.DEFAULT_TIMEOUT
+            )
+            resp.raise_for_status()
+            return resp

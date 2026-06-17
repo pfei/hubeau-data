@@ -6,6 +6,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-06-17
+
+### Added
+
+- **Async concurrency limiting via `asyncio.Semaphore`.**
+  `AsyncHubeauBaseAPI` now holds a per-API semaphore capping simultaneous
+  in-flight requests. Default is 5; configurable at client level:
+
+```python
+  async with AsyncHubeauClient(max_concurrent=3) as client:
+      ...
+```
+
+The semaphore is acquired and released inside `_get()`, so retry backoff
+intervals (tenacity) do not hold the slot.
+
 ## [0.2.0] - 2026-06-15
 
 ### Changed — Breaking

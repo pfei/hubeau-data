@@ -90,7 +90,8 @@ print(cov.summary())
 ## Async client
 
 For bulk data collection — e.g. fetching many stations before inserting into a database —
-`AsyncHubeauClient` mirrors the sync client and supports `asyncio.gather()` for parallel requests:
+`AsyncHubeauClient` mirrors the sync client and supports `asyncio.gather()` for parallel requests.
+Concurrency is capped per API via an `asyncio.Semaphore` (default: 5, configurable via `max_concurrent`):
 
 ```python
 import asyncio
@@ -98,7 +99,8 @@ from hubeau_data.async_client import AsyncHubeauClient
 from hubeau_data.models.hydrometrie import ObservationTrParams
 
 async def main():
-    async with AsyncHubeauClient() as client:
+    # max_concurrent=3: at most 3 simultaneous requests to the hydrometrie API
+    async with AsyncHubeauClient(max_concurrent=3) as client:
         codes = ["O001004003", "K418001001", "A1234567"]
         tasks = [
             client.hydrometrie.get_observations_tr(
@@ -183,7 +185,7 @@ Exploration scripts under `scripts/qualite_rivieres/` and `scripts/hydrometrie/`
 - [x] `CHANGELOG.md` + `CONTRIBUTING.md`
 - [x] PyPI release (`0.1.0`, `0.2.0`)
 - [x] `PagedResponse[T]` — all `get_*` methods expose `count`, `data`, `next_cursor`
-- [ ] Rate limiting in async client (Semaphore)
+- [x] Rate limiting in async client (Semaphore)
 - [ ] Full audit of query parameter names across remaining APIs
 
 ## License
