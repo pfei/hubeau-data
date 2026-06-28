@@ -174,6 +174,31 @@ uv run python scripts/phytopharmaceutiques/check_health.py
 
 Exploration scripts under `scripts/qualite_rivieres/` and `scripts/hydrometrie/`.
 
+## Raw values and units
+
+`hubeau-data` returns raw values exactly as provided by the Hub'Eau API, without any unit conversion.
+Callers are responsible for interpreting units.
+
+Known units for hydrometric observations (`ObservationTr.resultat_obs`):
+
+| `grandeur_hydro` | Unit | Convert to | Factor |
+|------------------|------|------------|--------|
+| `H` (water height) | mm | m | `/ 1000` |
+| `Q` (streamflow) | l/s | m³/s | `/ 1000` |
+
+Example:
+
+```python
+for o in result.data:
+    if o.grandeur_hydro == "Q":
+        flow_m3s = o.resultat_obs / 1000  # l/s → m³/s
+    elif o.grandeur_hydro == "H":
+        height_m = o.resultat_obs / 1000  # mm → m
+```
+
+> These units are not explicitly documented by Hub'Eau but were verified empirically
+> against known hydrological values (e.g. Garonne at La Réole, June 2026: ~130 m³/s).
+
 ## Roadmap
 
 - [x] Full Hub'Eau API coverage (11 APIs implemented)
